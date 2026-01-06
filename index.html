@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B.C consulting tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Marked library for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f8fafc; color: #334155; }
+        .chart-container { position: relative; width: 100%; max-width: 900px; margin: 0 auto; height: 350px; max-height: 400px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); transition: transform 0.2s; border: 1px solid #e2e8f0; }
+        
+        /* Main Theme Color: #96c6c7 */
+        /* For buttons and active states */
+        .bg-theme { background-color: #96c6c7; }
+        .bg-theme-hover:hover { background-color: #7ab0b1; }
+        .text-theme { color: #5f9ea0; } /* Slightly darker for text readability */
+        .border-theme { border-color: #96c6c7; }
+        .ring-theme:focus { --tw-ring-color: #96c6c7; }
+
+        .nav-btn.active { background-color: #96c6c7; color: white; font-weight: bold; }
+        .nav-btn:not(.active):hover { background-color: #e0f2f2; color: #5f9ea0; }
+        
+        /* Markdown Styles within AI response */
+        .prose h3 { font-size: 1.1em; font-weight: bold; margin-top: 1.2em; margin-bottom: 0.5em; color: #5f9ea0; border-bottom: 2px solid #e0f2f2; padding-bottom: 4px; }
+        .prose h4 { font-size: 1em; font-weight: bold; margin-top: 1em; margin-bottom: 0.4em; color: #1e293b; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose p { margin-bottom: 0.8em; line-height: 1.7; font-size: 0.95rem; }
+        .prose strong { color: #5f9ea0; font-weight: 600; background: linear-gradient(transparent 60%, #e0f2f2 60%); }
+        .prose blockquote { border-left: 4px solid #96c6c7; padding-left: 1em; background-color: #f0f9f9; padding: 0.5em 1em; border-radius: 0 4px 4px 0; font-style: italic; color: #475569; }
+
+        /* Loading Animation */
+        .typing-indicator span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: #96c6c7;
+            border-radius: 50%;
+            animation: typing 1s infinite;
+            margin: 0 2px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); opacity: 0.5; }
+            50% { transform: translateY(-5px); opacity: 1; }
+        }
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- Header & Navigation -->
+    <nav class="bg-white shadow sticky top-0 z-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-4">
+                    <span class="text-lg font-bold text-slate-800 tracking-tight">
+                        📊 B.C consulting <span class="text-theme">tools</span>
+                    </span>
+                    <!-- Category Switcher -->
+                    <div class="hidden md:flex bg-slate-100 rounded-lg p-1 ml-6">
+                        <button onclick="switchCategory('bust')" id="cat-bust" class="px-4 py-1 text-sm rounded-md transition-all shadow-sm bg-white text-theme font-bold">バスト・肌ケア</button>
+                        <button onclick="switchCategory('nail')" id="cat-nail" class="px-4 py-1 text-sm rounded-md transition-all text-slate-500 hover:text-slate-700">ネイル事業</button>
+                    </div>
+                </div>
+                <div class="flex space-x-2 items-center overflow-x-auto">
+                    <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn active px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">全体分析</button>
+                    <button onclick="switchView('details')" id="nav-details" class="nav-btn px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">店舗詳細</button>
+                    <button onclick="switchView('marketing')" id="nav-marketing" class="nav-btn px-3 py-2 rounded-lg text-sm transition whitespace-nowrap bg-gradient-to-r from-[#96c6c7] to-[#5f9ea0] text-white hover:opacity-90 shadow-md flex items-center"><span class="mr-1">✨</span>AI集客コピー</button>
+                    <button onclick="switchView('strategy')" id="nav-strategy" class="nav-btn px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">コンサルAI</button>
+                </div>
+            </div>
+            <!-- Mobile Category Switcher -->
+            <div class="md:hidden pb-3 pt-1 flex justify-center">
+                <div class="bg-slate-100 rounded-lg p-1 flex">
+                    <button onclick="switchCategory('bust')" id="cat-bust-m" class="px-4 py-1 text-xs rounded-md transition-all shadow-sm bg-white text-theme font-bold">バスト・肌ケア</button>
+                    <button onclick="switchCategory('nail')" id="cat-nail-m" class="px-4 py-1 text-xs rounded-md transition-all text-slate-500">ネイル</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- VIEW 1: DASHBOARD OVERVIEW -->
+        <section id="view-dashboard" class="space-y-6 animate-fade-in">
+            <div class="flex justify-between items-end border-b pb-4 border-slate-200">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">全体パフォーマンス推移</h1>
+                    <p class="text-sm text-slate-500 mt-1">選択中の事業部: <span id="current-cat-label" class="font-bold text-theme">バスト・肌ケア</span> (2025年4月〜12月)</p>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="card p-5 border-l-4 border-[#96c6c7]">
+                    <p class="text-xs font-bold text-slate-400 uppercase">期間合計 PV数</p>
+                    <p class="text-2xl font-bold text-slate-800 metric-value mt-1" id="kpi-total-pv">-</p>
+                </div>
+                <div class="card p-5 border-l-4 border-[#7ab0b1]">
+                    <p class="text-xs font-bold text-slate-400 uppercase">期間合計 新規数</p>
+                    <p class="text-2xl font-bold text-slate-800 metric-value mt-1" id="kpi-total-new">-</p>
+                </div>
+                <div class="card p-5 border-l-4 border-emerald-500">
+                    <p class="text-xs font-bold text-slate-400 uppercase">平均CVR (新規/PV)</p>
+                    <p class="text-2xl font-bold text-slate-800 metric-value mt-1" id="kpi-avg-cvr">-</p>
+                </div>
+                <div class="card p-5 border-l-4 border-purple-400">
+                    <p class="text-xs font-bold text-slate-400 uppercase">分析対象店舗数</p>
+                    <p class="text-2xl font-bold text-slate-800 metric-value mt-1" id="kpi-active-salons">-</p>
+                </div>
+            </div>
+
+            <!-- Main Trend Chart -->
+            <div class="card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-slate-800">月別推移：PV数 vs 新規獲得数</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+             <!-- Comparison Table -->
+             <div class="card p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">月次データ詳細</h2>
+                <div class="overflow-x-auto custom-scrollbar h-[300px]">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-bold text-slate-500">年月</th>
+                                <th class="px-3 py-2 text-right text-xs font-bold text-slate-500">合計PV</th>
+                                <th class="px-3 py-2 text-right text-xs font-bold text-slate-500">合計新規数</th>
+                                <th class="px-3 py-2 text-right text-xs font-bold text-slate-500">平均CVR</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthly-table-body" class="bg-white divide-y divide-slate-100 text-sm">
+                            <!-- JS Populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: MARKETING AI -->
+        <section id="view-marketing" class="space-y-6 hidden">
+            <div class="flex justify-between items-end border-b pb-4 border-slate-200">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">HPB集客コピー自動生成</h1>
+                    <p class="text-sm text-slate-500 mt-1">「美人バスト」独自の強み（医療提携、98%成功実績）を学習済みのAIが、トレンドに合わせた文章を作成します。</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Input Panel -->
+                <div class="col-span-1 space-y-4">
+                    <div class="card p-5">
+                        <h2 class="font-bold text-slate-800 mb-4 flex items-center"><span class="text-xl mr-2">⚙️</span> 生成設定</h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">1. 作成するコンテンツ</label>
+                                <select id="mkt-type" class="w-full border border-slate-300 rounded p-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm">
+                                    <option value="catch_copy">キャッチコピー案 (一覧)</option>
+                                    <option value="body_copy">フォトギャラリー/ブログ本文</option>
+                                    <option value="campaign">新キャンペーン・クーポン企画</option>
+                                    <option value="line_message">LINE公式アカウント配信文</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">2. ターゲット層</label>
+                                <select id="mkt-target" class="w-full border border-slate-300 rounded p-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm">
+                                    <option value="general">全般 (バストアップしたい方)</option>
+                                    <option value="skinny">痩せ型で大きくならない方</option>
+                                    <option value="postpartum">産後の下垂・形崩れに悩む方</option>
+                                    <option value="bridal">結婚式を控えたプレ花嫁</option>
+                                    <option value="failed">他店で効果が出なかった方</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">3. 季節・トレンド要素</label>
+                                <input type="text" id="mkt-trend" class="w-full border border-slate-300 rounded p-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm" placeholder="例: 正月太り解消、春の出会い、薄着の季節">
+                            </div>
+
+                            <button onclick="generateMarketingContent()" class="w-full bg-gradient-to-r from-[#96c6c7] to-[#5f9ea0] hover:opacity-90 text-white py-3 rounded-lg font-bold shadow-lg transform transition active:scale-95 flex justify-center items-center">
+                                <span class="mr-2">✨</span> AIで生成する
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100 text-xs text-cyan-800">
+                        <strong>💡 ポイント:</strong><br>
+                        生成されたコピーはHot Pepper Beautyの文字数制限（キャッチコピー等）に合わせて調整して使用してください。
+                    </div>
+                </div>
+
+                <!-- Output Panel -->
+                <div class="col-span-2">
+                    <div id="mkt-output-card" class="card h-full min-h-[500px] flex flex-col relative">
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-lg">
+                            <h3 class="font-bold text-slate-700">生成結果</h3>
+                            <button onclick="copyToClipboard('mkt-result-content')" class="text-xs bg-white border border-slate-300 px-3 py-1 rounded hover:bg-slate-50 text-slate-600">コピーする</button>
+                        </div>
+                        <div id="mkt-result-area" class="p-6 flex-grow overflow-y-auto custom-scrollbar">
+                            <div class="h-full flex flex-col justify-center items-center text-slate-400">
+                                <span class="text-4xl mb-4">🪄</span>
+                                <p>左側のメニューを設定して<br>「生成する」ボタンを押してください</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: SALON DETAILS -->
+        <section id="view-details" class="space-y-6 hidden">
+             <div class="flex justify-between items-end border-b pb-4 border-slate-200">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">店舗別 詳細分析</h1>
+                    <p class="text-sm text-slate-500 mt-1">個別の店舗の月次推移を確認し、異常値の原因を特定します。</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Sidebar Selector -->
+                <div class="col-span-1 card p-4 h-fit bg-white">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">店舗を選択してください</label>
+                    <select id="salon-selector" class="block w-full text-base border-slate-300 focus:outline-none focus:ring-[#96c6c7] focus:border-[#96c6c7] rounded-md py-2" size="15">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <!-- Detail Content -->
+                <div class="col-span-3 space-y-6">
+                    <div class="card p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 id="detail-title" class="text-2xl font-bold text-slate-800">店舗を選択してください</h2>
+                                <span id="detail-type" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 mt-2 inline-block">-</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-slate-500">平均月間PV</div>
+                                <div id="detail-avg-pv" class="text-2xl font-bold text-slate-800 font-mono">-</div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="detailChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Table -->
+                    <div class="card p-6">
+                         <h3 class="font-bold text-slate-800 mb-3">推移データ一覧</h3>
+                         <div class="overflow-x-auto">
+                             <table class="min-w-full text-sm text-left">
+                                 <thead>
+                                     <tr class="border-b border-slate-200 bg-slate-50">
+                                         <th class="py-3 px-4 font-bold text-slate-600">年月</th>
+                                         <th class="py-3 px-4 font-bold text-slate-600">プラン</th>
+                                         <th class="py-3 px-4 text-right font-bold text-slate-600">PV数</th>
+                                         <th class="py-3 px-4 text-right font-bold text-slate-600">新規数</th>
+                                         <th class="py-3 px-4 text-right font-bold text-slate-600">PV前月比</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody id="detail-table-body" class="divide-y divide-slate-100"></tbody>
+                             </table>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: STRATEGY & CHAT -->
+        <section id="view-strategy" class="space-y-6 hidden">
+            <div class="flex justify-between items-end border-b pb-4 border-slate-200">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">AIコンサルタント・チャット</h1>
+                    <p class="text-sm text-slate-500 mt-1">集客データに関する質問や、戦略の壁打ち相手としてご利用ください。</p>
+                </div>
+            </div>
+
+            <!-- AI Chat Interface -->
+            <div class="card p-6 border-t-4 border-[#96c6c7] flex flex-col h-[600px]">
+                <div id="chat-history" class="flex-grow overflow-y-auto custom-scrollbar p-4 bg-slate-50 rounded-lg mb-4 space-y-4">
+                    <div class="flex items-start">
+                        <div class="bg-cyan-50 text-cyan-900 p-3 rounded-lg rounded-tl-none text-sm max-w-[80%]">
+                            こんにちは！サロン集客データのアシスタントです。データ分析や対策について質問してください。<br>例：「一番効率が良い店舗は？」「12月の落ち込みの原因は？」
+                        </div>
+                    </div>
+                </div>
+                <!-- Input Area -->
+                <div class="flex gap-2">
+                    <input type="text" id="chat-input" class="flex-grow border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#96c6c7]" placeholder="質問を入力してください...">
+                    <button onclick="sendChatMessage()" class="bg-theme bg-theme-hover text-white px-6 py-2 rounded-lg font-bold transition">送信</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const apiKey = ""; // Environment Variable
+
+        // --- SALON BRAND CONTEXT (Extracted from URL) ---
+        const BRAND_CONTEXT = `
+        【サロン名】美人バスト（表参道店を基準）
+        【コンセプト】医療提携バストアップ専門店。定額制（サブスク）あり。
+        【主な強み・USP】
+        1. 実績: バストアップ成功率98%、2カップUP続出、施術実績3万人超、AA→Fカップ事例あり。
+        2. 技術: 独自開発マシーン × 熟練ハンド技術 × 高濃度育乳美容液導入。
+        3. 差別化: 「痛くない」「切らない」「ダウンタイムなし」。他店でダメだった人、痩せ型、産後もOK。
+        4. サポート: 専門家監修の栄養指導・食事指導あり（内側からのケア）。
+        5. 価格帯: 初回体験 7,700円〜9,900円（通常2万円相当）。
+        【ターゲット】
+        - 他のサロンに通ったが効果が出なかった人
+        - 豊胸手術は怖い人
+        - 痩せ型でバストにお肉がつかない人
+        - 産後の下垂・形崩れに悩む人
+        - ブライダルを控えた花嫁
+        `;
+
+        // --- GEMINI API UTILS ---
+        async function callGeminiAPI(prompt, systemInstruction = "") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "エラー：回答を生成できませんでした。";
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                return "通信エラーが発生しました。しばらく待ってから再試行してください。";
+            }
+        }
+
+        // --- MARKETING AI LOGIC ---
+        async function generateMarketingContent() {
+            const type = document.getElementById('mkt-type').value;
+            const target = document.getElementById('mkt-target').value;
+            const trend = document.getElementById('mkt-trend').value;
+            const resultArea = document.getElementById('mkt-result-area');
+
+            // Set Loading State
+            resultArea.innerHTML = '<div class="h-full flex flex-col justify-center items-center text-[#5f9ea0]"><div class="typing-indicator"><span></span><span></span><span></span></div><p class="mt-4 text-sm font-bold">AIが最適なコピーを考案中...</p></div>';
+
+            // Construct Prompt
+            let instruction = `あなたはHot Pepper Beauty（ホットペッパービューティー）の熟練コピーライターです。
+            以下のサロン情報（BRAND_CONTEXT）を基に、指定されたターゲットと季節感に合わせた集客コンテンツを作成してください。
+            Markdown形式で出力し、重要な部分は太字にしてください。
+            絵文字を適度に使用し、女性がクリックしたくなるような共感性の高い文章にしてください。`;
+            
+            let userPrompt = `
+            【サロン情報】
+            ${BRAND_CONTEXT}
+
+            【作成依頼内容】
+            ・コンテンツ種類: ${getTypeLabel(type)}
+            ・ターゲット層: ${getTargetLabel(target)}
+            ・季節/トレンド要素: ${trend || '指定なし（今の季節感に合わせて）'}
+            ・現在の年月: 2026年1月（または直近の季節）
+
+            【出力要件】
+            `;
+
+            if (type === 'catch_copy') {
+                userPrompt += `
+                Hot Pepper Beautyの検索一覧やトップページで使えるキャッチコピーを10案作成してください。
+                - 文字数は20文字〜35文字程度
+                - 「限定」「今だけ」「実績」などのフックを入れる
+                - ターゲットの悩みに刺さる言葉を選ぶ
+                `;
+            } else if (type === 'body_copy') {
+                userPrompt += `
+                フォトギャラリーやブログで使用する魅力的な紹介文を作成してください。
+                - タイトル（30文字以内）
+                - 本文（400文字程度）
+                - 構成: 共感（悩み）→ 解決策（サロンの強み・マシン・栄養指導）→ 未来（ベネフィット）
+                - 最後に「まずは体験クーポンで」というクロージングを入れる
+                `;
+            } else if (type === 'campaign') {
+                userPrompt += `
+                ターゲット層に向けた新しいクーポン・キャンペーン企画を3つ提案してください。
+                各案について以下を記述してください：
+                1. クーポン名（HPB用、短く魅力的に）
+                2. ターゲットと狙い
+                3. オファー内容（施術内容と価格の打ち出し方 ※価格自体は仮でOK）
+                4. 備考（キャッチーな補足文）
+                `;
+            } else if (type === 'line_message') {
+                userPrompt += `
+                LINE公式アカウントで配信するメッセージを作成してください。
+                - 開封率を上げるための1行目の吹き出しテキスト
+                - 親しみやすい本文
+                - リッチメニューや予約リンクへの誘導
+                `;
+            }
+
+            // Call API
+            const result = await callGeminiAPI(userPrompt, instruction);
+            
+            // Render Result
+            resultArea.innerHTML = `<div id="mkt-result-content" class="prose max-w-none text-slate-700 text-sm">${marked.parse(result)}</div>`;
+        }
+
+        function getTypeLabel(val) {
+            const map = { 'catch_copy': 'キャッチコピー案', 'body_copy': 'ブログ/紹介文', 'campaign': 'キャンペーン企画', 'line_message': 'LINE配信文' };
+            return map[val] || val;
+        }
+        function getTargetLabel(val) {
+            const map = { 'general': '全般', 'skinny': '痩せ型', 'postpartum': '産後', 'bridal': 'ブライダル', 'failed': '他店経験者' };
+            return map[val] || val;
+        }
+        function copyToClipboard(id) {
+            const el = document.getElementById(id);
+            if(!el) return;
+            const text = el.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('コピーしました！');
+            });
+        }
+
+        // --- CHAT LOGIC ---
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const history = document.getElementById('chat-history');
+            history.innerHTML += `<div class="flex justify-end"><div class="bg-slate-200 text-slate-800 p-3 rounded-lg rounded-tr-none text-sm max-w-[80%]">${text}</div></div>`;
+            input.value = '';
+            history.scrollTop = history.scrollHeight;
+
+            const loadingId = 'loading-' + Date.now();
+            history.innerHTML += `<div class="flex items-start" id="${loadingId}"><div class="bg-cyan-50 text-cyan-900 p-3 rounded-lg rounded-tl-none text-sm max-w-[80%]"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
+            history.scrollTop = history.scrollHeight;
+
+            // Simplified Data Context for Chat
+            const contextData = rawData.filter(d => d.category === state.currentCategory).map(d => `${d.date} ${d.name}: PV${d.pv}, 新規${d.new}`).join('\n');
+            const prompt = `ユーザー質問: ${text}\n\n関連データ:\n${contextData.substring(0,5000)}`;
+            const system = `あなたは美容サロンのデータ分析コンサルタントです。提供されたデータに基づいて日本語で回答してください。`;
+
+            const responseText = await callGeminiAPI(prompt, system);
+
+            document.getElementById(loadingId).remove();
+            history.innerHTML += `<div class="flex items-start"><div class="bg-cyan-50 text-cyan-900 p-3 rounded-lg rounded-tl-none text-sm max-w-[80%] prose">${marked.parse(responseText)}</div></div>`;
+            history.scrollTop = history.scrollHeight;
+        }
+
+
+        // --- CORE APP LOGIC ---
+        
+        // FULL Raw Data from Prompt
+         const rawData = [
+            // April
+            { date: "2025/04", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1453, new: 6 },
+            { date: "2025/04", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1294, new: 6 },
+            { date: "2025/04", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1288, new: 10 },
+            { date: "2025/04", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1099, new: 12 },
+            { date: "2025/04", name: "シミゼロ美人 品川高輪", type: "直営", plan: "ライトS", pv: 1316, new: 10 },
+            { date: "2025/04", name: "美人ネイル＋", type: "直営", plan: "ライトS", pv: 2639, new: 37 },
+            // May
+            { date: "2025/05", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1643, new: 21 },
+            { date: "2025/05", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1693, new: 15 },
+            { date: "2025/05", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1586, new: 12 },
+            { date: "2025/05", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1193, new: 12 },
+            { date: "2025/05", name: "シミゼロ美人 品川高輪", type: "直営", plan: "ライトS", pv: 1305, new: 10 },
+            { date: "2025/05", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 2809, new: 29 },
+            { date: "2025/05", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1758, new: 7 },
+            { date: "2025/05", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 1069, new: 7 },
+            { date: "2025/05", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 2145, new: 11 },
+            { date: "2025/05", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 1205, new: 4 },
+            { date: "2025/05", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 2117, new: 12 },
+            { date: "2025/05", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 1140, new: 10 },
+            // June
+            { date: "2025/06", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1389, new: 5 },
+            { date: "2025/06", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1461, new: 16 },
+            { date: "2025/06", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1349, new: 11 },
+            { date: "2025/06", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1157, new: 8 },
+            { date: "2025/06", name: "シミケアZERO美人 表参道", type: "直営", plan: "ライトS", pv: 824, new: 4 },
+            { date: "2025/06", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 584, new: 7 },
+            { date: "2025/06", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 2535, new: 27 },
+            { date: "2025/06", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1413, new: 14 },
+            { date: "2025/06", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 880, new: 8 },
+            { date: "2025/06", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 1837, new: 9 },
+            { date: "2025/06", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 881, new: 3 },
+            { date: "2025/06", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 1765, new: 13 },
+            { date: "2025/06", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 865, new: 10 },
+            // July
+            { date: "2025/07", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 2149, new: 16 },
+            { date: "2025/07", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1585, new: 15 },
+            { date: "2025/07", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1590, new: 11 },
+            { date: "2025/07", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1428, new: 17 },
+            { date: "2025/07", name: "シミケアZERO美人 表参道", type: "直営", plan: "ライトS", pv: 852, new: 2 },
+            { date: "2025/07", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 833, new: 7 },
+            { date: "2025/07", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 3128, new: 26 },
+            { date: "2025/07", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1788, new: 9 },
+            { date: "2025/07", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 942, new: 6 },
+            { date: "2025/07", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 2504, new: 11 },
+            { date: "2025/07", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 812, new: 11 },
+            { date: "2025/07", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 2311, new: 13 },
+            { date: "2025/07", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 1014, new: 3 },
+            // August
+            { date: "2025/08", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 607, new: 2 },
+            { date: "2025/08", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1584, new: 17 },
+            { date: "2025/08", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1706, new: 19 },
+            { date: "2025/08", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1293, new: 8 },
+            { date: "2025/08", name: "シミケアZERO美人 表参道", type: "直営", plan: "ライトS", pv: 607, new: 2 },
+            { date: "2025/08", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 629, new: 5 },
+            { date: "2025/08", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 2078, new: 14 },
+            { date: "2025/08", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1298, new: 10 },
+            { date: "2025/08", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 775, new: 6 },
+            { date: "2025/08", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 2345, new: 11 },
+            { date: "2025/08", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 618, new: 1 },
+            { date: "2025/08", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 2223, new: 12 },
+            { date: "2025/08", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 1050, new: 4 },
+            { date: "2025/08", name: "美人バスト千早", type: "FC", plan: "ライトS", pv: 1175, new: 6 },
+            // September
+            { date: "2025/09", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1615, new: 17 },
+            { date: "2025/09", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1337, new: 15 },
+            { date: "2025/09", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1404, new: 13 },
+            { date: "2025/09", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1184, new: 11 },
+            { date: "2025/09", name: "シミケアZERO美人 表参道", type: "直営", plan: "ライトS", pv: 602, new: 2 },
+            { date: "2025/09", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 580, new: 6 },
+            { date: "2025/09", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 2145, new: 24 },
+            { date: "2025/09", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1277, new: 6 },
+            { date: "2025/09", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 692, new: 2 },
+            { date: "2025/09", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 2238, new: 10 },
+            { date: "2025/09", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 704, new: 3 },
+            { date: "2025/09", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 1906, new: 11 },
+            { date: "2025/09", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 1001, new: 9 },
+            { date: "2025/09", name: "美人バスト千早", type: "FC", plan: "ライトS", pv: 1033, new: 6 },
+            // October
+            { date: "2025/10", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1513, new: 3 },
+            { date: "2025/10", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1289, new: 17 },
+            { date: "2025/10", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1477, new: 10 },
+            { date: "2025/10", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1167, new: 12 },
+            { date: "2025/10", name: "シミケアZERO美人 表参道", type: "直営", plan: "ライトS", pv: 887, new: 1 },
+            { date: "2025/10", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 709, new: 2 },
+            { date: "2025/10", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 2330, new: 17 },
+            { date: "2025/10", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1161, new: 6 },
+            { date: "2025/10", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 894, new: 6 },
+            { date: "2025/10", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 2517, new: 11 },
+            { date: "2025/10", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 1012, new: 8 },
+            { date: "2025/10", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 1950, new: 11 },
+            { date: "2025/10", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 1008, new: 5 },
+            { date: "2025/10", name: "美人バスト千早", type: "FC", plan: "ライトS", pv: 1494, new: 6 },
+            { date: "2025/10", name: "美人バスト南森町", type: "FC", plan: "ライトS", pv: 903, new: 16 },
+            // November
+            { date: "2025/11", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1436, new: 10 },
+            { date: "2025/11", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 948, new: 15 },
+            { date: "2025/11", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1238, new: 11 },
+            { date: "2025/11", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 860, new: 3 },
+            { date: "2025/11", name: "シミケアZERO美人 表参道", type: "直営", plan: "ライトS", pv: 668, new: 2 },
+            { date: "2025/11", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 629, new: 5 },
+            { date: "2025/11", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 1489, new: 8 },
+            { date: "2025/11", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1044, new: 2 },
+            { date: "2025/11", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 602, new: 6 },
+            { date: "2025/11", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 2079, new: 4 },
+            { date: "2025/11", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 1088, new: 5 },
+            { date: "2025/11", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 1534, new: 11 },
+            { date: "2025/11", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 867, new: 9 },
+            { date: "2025/11", name: "美人バスト千早", type: "FC", plan: "ライトS", pv: 1482, new: 4 },
+            { date: "2025/11", name: "美人バスト南森町", type: "FC", plan: "ライトS", pv: 689, new: 2 },
+            // December
+            { date: "2025/12", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 703, new: 3 },
+            { date: "2025/12", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 687, new: 7 },
+            { date: "2025/12", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 817, new: 11 },
+            { date: "2025/12", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 798, new: 1 },
+            { date: "2025/12", name: "シミケアZERO美人 表参道", type: "直営", plan: "ライトS", pv: 445, new: 0 },
+            { date: "2025/12", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 603, new: 4 },
+            { date: "2025/12", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 1125, new: 3 },
+            { date: "2025/12", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 779, new: 2 },
+            { date: "2025/12", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 0, new: 0 },
+            { date: "2025/12", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 1137, new: 9 },
+            { date: "2025/12", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 974, new: 1 },
+            { date: "2025/12", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 1059, new: 9 },
+            { date: "2025/12", name: "美人＋FCSS", type: "FC", plan: "SS", pv: 239, new: 30 }
+        ];
+
+        // Populate category
+        rawData.forEach(d => d.category = d.name.includes("ネイル") ? 'nail' : 'bust');
+
+        let state = { currentView: 'dashboard', currentCategory: 'bust', selectedSalon: null };
+        const formatNumber = (num) => new Intl.NumberFormat('ja-JP').format(num);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            document.getElementById('salon-selector').addEventListener('change', (e) => {
+                state.selectedSalon = e.target.value;
+                renderSalonDetail();
+            });
+            document.getElementById('chat-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendChatMessage(); });
+        });
+
+        function initApp() {
+            const categoryData = rawData.filter(d => d.category === state.currentCategory);
+            const salons = [...new Set(categoryData.map(d => d.name))];
+            state.selectedSalon = salons[0] || '美人バスト表参道'; 
+            updateCategoryUI();
+            renderDashboard();
+            populateSalonSelect();
+            renderSalonDetail();
+            switchView('dashboard');
+        }
+
+        function switchCategory(cat) {
+            state.currentCategory = cat;
+            const categoryData = rawData.filter(d => d.category === state.currentCategory);
+            state.selectedSalon = categoryData[0]?.name || null;
+            updateCategoryUI();
+            renderDashboard();
+            populateSalonSelect();
+            renderSalonDetail();
+        }
+
+        function updateCategoryUI() {
+            const btnBust = document.getElementById('cat-bust');
+            const btnNail = document.getElementById('cat-nail');
+            const btnBustM = document.getElementById('cat-bust-m');
+            const btnNailM = document.getElementById('cat-nail-m');
+
+            const activeClass = "px-4 py-1 text-sm rounded-md transition-all bg-white text-theme font-bold shadow-sm";
+            const inactiveClass = "px-4 py-1 text-sm rounded-md transition-all text-slate-500 hover:text-slate-700 bg-transparent";
+            const activeClassM = "px-4 py-1 text-xs rounded-md transition-all bg-white text-theme font-bold shadow-sm";
+            const inactiveClassM = "px-4 py-1 text-xs rounded-md transition-all text-slate-500 hover:text-slate-700 bg-transparent";
+
+            if (state.currentCategory === 'bust') {
+                btnBust.className = activeClass;
+                btnNail.className = inactiveClass;
+                btnBustM.className = activeClassM;
+                btnNailM.className = inactiveClassM;
+                document.getElementById('current-cat-label').innerText = "バスト・肌ケア事業";
+            } else {
+                btnBust.className = inactiveClass;
+                btnNail.className = activeClass;
+                btnBustM.className = inactiveClassM;
+                btnNailM.className = activeClassM;
+                document.getElementById('current-cat-label').innerText = "ネイル事業";
+            }
+        }
+
+        function switchView(viewName) {
+            ['dashboard', 'details', 'marketing', 'strategy'].forEach(v => {
+                const section = document.getElementById(`view-${v}`);
+                const btn = document.getElementById(`nav-${v}`);
+                if (v === viewName) {
+                    section.classList.remove('hidden');
+                    btn.classList.add('active');
+                } else {
+                    section.classList.add('hidden');
+                    btn.classList.remove('active');
+                }
+            });
+            if(viewName === 'details') renderSalonDetail();
+        }
+
+        // --- DASHBOARD RENDER ---
+        let trendChartInstance = null;
+        function renderDashboard() {
+            const filteredData = rawData.filter(d => d.category === state.currentCategory);
+            const months = [...new Set(filteredData.map(d => d.date))].sort();
+            
+            let totalPV = 0, totalNew = 0;
+            const monthlyPV = {}, monthlyNew = {};
+
+            filteredData.forEach(d => {
+                totalPV += d.pv;
+                totalNew += d.new;
+                if(!monthlyPV[d.date]) { monthlyPV[d.date] = 0; monthlyNew[d.date] = 0; }
+                monthlyPV[d.date] += d.pv;
+                monthlyNew[d.date] += d.new;
+            });
+            
+            document.getElementById('kpi-total-pv').textContent = formatNumber(totalPV);
+            document.getElementById('kpi-total-new').textContent = formatNumber(totalNew);
+            document.getElementById('kpi-avg-cvr').textContent = totalPV > 0 ? ((totalNew/totalPV)*100).toFixed(2) + '%' : '0%';
+            document.getElementById('kpi-active-salons').textContent = [...new Set(filteredData.map(d=>d.name))].length;
+
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            if (trendChartInstance) trendChartInstance.destroy();
+            trendChartInstance = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        { label: '合計PV数', data: months.map(m=>monthlyPV[m]), borderColor: '#5f9ea0', backgroundColor: 'rgba(150, 198, 199, 0.2)', yAxisID: 'y', fill: true },
+                        { label: '新規獲得数', data: months.map(m=>monthlyNew[m]), borderColor: '#ff8c00', backgroundColor: 'transparent', yAxisID: 'y1', borderDash: [5,5] }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: {display:true, position:'left', title:{display:true, text:'PV'}}, y1: {display:true, position:'right', grid:{drawOnChartArea:false}, title:{display:true, text:'新規'}} } }
+            });
+
+            // Table
+            const tbody = document.getElementById('monthly-table-body');
+            tbody.innerHTML = '';
+            months.forEach(m => {
+                const pv = monthlyPV[m], nw = monthlyNew[m];
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${m}</td><td class="px-3 py-2 text-right">${formatNumber(pv)}</td><td class="px-3 py-2 text-right font-bold">${formatNumber(nw)}</td><td class="px-3 py-2 text-right">${pv>0?((nw/pv)*100).toFixed(2):0}%</td></tr>`;
+            });
+        }
+
+        // --- DETAIL RENDER ---
+        function populateSalonSelect() {
+            const select = document.getElementById('salon-selector');
+            select.innerHTML = '';
+            const categoryData = rawData.filter(d => d.category === state.currentCategory);
+            [...new Set(categoryData.map(d => d.name))].forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s; opt.textContent = s;
+                if(s === state.selectedSalon) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+        
+        let detailChartInstance = null;
+        function renderSalonDetail() {
+            if(!state.selectedSalon) return;
+            const records = rawData.filter(d => d.name === state.selectedSalon);
+            document.getElementById('detail-title').textContent = state.selectedSalon;
+            document.getElementById('detail-type').textContent = records[0]?.type || '-';
+            
+            const totalPV = records.reduce((s,r)=>s+r.pv,0);
+            document.getElementById('detail-avg-pv').textContent = formatNumber(Math.round(totalPV/records.length));
+
+            const ctx = document.getElementById('detailChart').getContext('2d');
+            if (detailChartInstance) detailChartInstance.destroy();
+            detailChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: records.map(r=>r.date),
+                    datasets: [
+                        { label: '新規', data: records.map(r=>r.new), backgroundColor: '#fbbf24', yAxisID: 'y', order:2 },
+                        { type: 'line', label: 'PV', data: records.map(r=>r.pv), borderColor: '#334155', yAxisID: 'y1', order:1 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: {display:true, position:'right', grid:{drawOnChartArea:false}}, y1: {display:true, position:'left'} } }
+            });
+
+            const tbody = document.getElementById('detail-table-body');
+            tbody.innerHTML = '';
+            let prevPV = 0;
+            records.forEach((r,i) => {
+                const diff = i===0 ? 0 : r.pv - prevPV;
+                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="py-3 px-4 font-medium">${r.date}</td><td class="py-3 px-4 text-xs text-slate-500">${r.plan}</td><td class="py-3 px-4 text-right">${formatNumber(r.pv)}</td><td class="py-3 px-4 text-right font-bold">${r.new}</td><td class="py-3 px-4 text-right text-xs ${diff>0?'text-green-600':'text-red-500'}">${diff>0?'+':''}${i===0?'-':diff}</td></tr>`;
+                prevPV = r.pv;
+            });
+        }
+    </script>
+</body>
+</html>
