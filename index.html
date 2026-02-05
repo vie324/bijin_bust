@@ -518,6 +518,85 @@
                 </div>
             </div>
 
+            <!-- CVR Trend & Direct vs FC Comparison -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <!-- CVR Trend Chart -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">CVR推移</h2>
+                            <p class="text-sm text-slate-500">コンバージョン率の月別推移</p>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500"></span>
+                                CVR %
+                            </span>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 280px;">
+                        <canvas id="cvrTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Direct vs FC Comparison -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">直営 vs FC 比較</h2>
+                            <p class="text-sm text-slate-500">店舗タイプ別パフォーマンス</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <!-- Direct Stats -->
+                        <div class="p-4 bg-gradient-to-br from-[#e0f2f2] to-[#b8d8d9] rounded-xl">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-3 h-3 rounded-full bg-[#5f9ea0]"></div>
+                                <span class="text-sm font-bold text-[#4a8385]">直営店</span>
+                            </div>
+                            <div class="space-y-2">
+                                <div>
+                                    <p class="text-xs text-slate-500">合計PV</p>
+                                    <p id="direct-total-pv" class="text-xl font-bold text-slate-800">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500">合計新規</p>
+                                    <p id="direct-total-new" class="text-xl font-bold text-slate-800">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500">平均CVR</p>
+                                    <p id="direct-avg-cvr" class="text-xl font-bold text-emerald-600">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- FC Stats -->
+                        <div class="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+                                <span class="text-sm font-bold text-purple-700">FC店</span>
+                            </div>
+                            <div class="space-y-2">
+                                <div>
+                                    <p class="text-xs text-slate-500">合計PV</p>
+                                    <p id="fc-total-pv" class="text-xl font-bold text-slate-800">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500">合計新規</p>
+                                    <p id="fc-total-new" class="text-xl font-bold text-slate-800">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500">平均CVR</p>
+                                    <p id="fc-avg-cvr" class="text-xl font-bold text-emerald-600">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 180px;">
+                        <canvas id="directFcChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- Monthly Data Table & Quick Stats -->
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <!-- Monthly Table -->
@@ -561,7 +640,7 @@
                             <p id="best-cvr-store" class="text-lg font-bold text-slate-800 truncate">-</p>
                         </div>
                         <div class="p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-slate-200">
-                            <p class="text-xs font-semibold text-slate-600 uppercase mb-1">直営 vs FC</p>
+                            <p class="text-xs font-semibold text-slate-600 uppercase mb-1">直営 vs FC 店舗数</p>
                             <div class="flex items-center gap-2 mt-2">
                                 <div class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
                                     <div id="direct-ratio-bar" class="h-full bg-gradient-to-r from-[#96c6c7] to-[#5f9ea0] rounded-full" style="width: 50%"></div>
@@ -763,7 +842,7 @@
 
     <!-- JavaScript Logic -->
     <script>
-        const apiKey = ""; // Environment Variable
+        const apiKey = "AIzaSyCpxzxwG7SqZ8Vr9qiR64Vu4fIyy3O3q0U";
 
         // --- SALON BRAND CONTEXT ---
         const BRAND_CONTEXT = `
@@ -1251,18 +1330,161 @@
             });
             document.getElementById('best-cvr-store').textContent = bestCVRStore ? `${bestCVRStore.replace('美人バスト','').replace('美人ネイル＋','')} (${(bestCVR*100).toFixed(2)}%)` : '-';
 
-            // Direct vs FC ratio
-            let directPV = 0, fcPV = 0;
+            // Direct vs FC detailed stats
+            let directPV = 0, fcPV = 0, directNew = 0, fcNew = 0;
             filteredData.forEach(d => {
-                if (d.type === '直営') directPV += d.pv;
-                else fcPV += d.pv;
+                if (d.type === '直営') {
+                    directPV += d.pv;
+                    directNew += d.new;
+                } else {
+                    fcPV += d.pv;
+                    fcNew += d.new;
+                }
             });
             const directRatio = (directPV + fcPV) > 0 ? (directPV / (directPV + fcPV)) * 100 : 50;
             document.getElementById('direct-ratio-bar').style.width = `${directRatio}%`;
             document.getElementById('direct-fc-ratio').textContent = `${Math.round(directRatio)}:${Math.round(100-directRatio)}`;
 
+            // Update Direct vs FC comparison cards
+            document.getElementById('direct-total-pv').textContent = formatNumber(directPV);
+            document.getElementById('direct-total-new').textContent = formatNumber(directNew);
+            document.getElementById('direct-avg-cvr').textContent = directPV > 0 ? ((directNew / directPV) * 100).toFixed(2) + '%' : '0%';
+            document.getElementById('fc-total-pv').textContent = formatNumber(fcPV);
+            document.getElementById('fc-total-new').textContent = formatNumber(fcNew);
+            document.getElementById('fc-avg-cvr').textContent = fcPV > 0 ? ((fcNew / fcPV) * 100).toFixed(2) + '%' : '0%';
+
+            // Render CVR Trend Chart
+            renderCVRTrendChart(months, monthlyPV, monthlyNew);
+
+            // Render Direct vs FC Comparison Chart
+            renderDirectFcChart(months, filteredData);
+
             // Render ranking
             updateRanking();
+        }
+
+        // CVR Trend Chart
+        let cvrTrendChartInstance = null;
+        function renderCVRTrendChart(months, monthlyPV, monthlyNew) {
+            const cvrData = months.map(m => {
+                return monthlyPV[m] > 0 ? ((monthlyNew[m] / monthlyPV[m]) * 100) : 0;
+            });
+
+            const ctx = document.getElementById('cvrTrendChart').getContext('2d');
+            if (cvrTrendChartInstance) cvrTrendChartInstance.destroy();
+
+            cvrTrendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'CVR (%)',
+                        data: cvrData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#f59e0b',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `CVR: ${context.parsed.y.toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'CVR (%)', font: { weight: 'bold' } },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Direct vs FC Comparison Chart
+        let directFcChartInstance = null;
+        function renderDirectFcChart(months, filteredData) {
+            const directMonthlyPV = {};
+            const fcMonthlyPV = {};
+
+            months.forEach(m => {
+                directMonthlyPV[m] = 0;
+                fcMonthlyPV[m] = 0;
+            });
+
+            filteredData.forEach(d => {
+                if (d.type === '直営') {
+                    directMonthlyPV[d.date] += d.pv;
+                } else {
+                    fcMonthlyPV[d.date] += d.pv;
+                }
+            });
+
+            const ctx = document.getElementById('directFcChart').getContext('2d');
+            if (directFcChartInstance) directFcChartInstance.destroy();
+
+            directFcChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: '直営店 PV',
+                            data: months.map(m => directMonthlyPV[m]),
+                            backgroundColor: 'rgba(95, 158, 160, 0.8)',
+                            borderColor: '#5f9ea0',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'FC店 PV',
+                            data: months.map(m => fcMonthlyPV[m]),
+                            backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                            borderColor: '#8b5cf6',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { boxWidth: 12, padding: 8, font: { size: 11 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            stacked: false,
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
         }
 
         function updateTrendBadge(id, change, isAbsolute = false) {
