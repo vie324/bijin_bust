@@ -6,163 +6,599 @@
     <title>B.C consulting tools</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Marked library for Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f8fafc; color: #334155; }
-        .chart-container { position: relative; width: 100%; max-width: 900px; margin: 0 auto; height: 350px; max-height: 400px; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); transition: transform 0.2s; border: 1px solid #e2e8f0; }
-        
-        /* Main Theme Color: #96c6c7 (Teal/Mint) */
-        .bg-theme { background-color: #96c6c7; }
-        .bg-theme-hover:hover { background-color: #7ab0b1; }
-        .text-theme { color: #5f9ea0; } 
-        .border-theme { border-color: #96c6c7; }
-        
-        .nav-btn.active { background-color: #96c6c7; color: white; font-weight: bold; }
-        .nav-btn:not(.active):hover { background-color: #e0f2f2; color: #5f9ea0; }
-        
-        /* Markdown Styles within AI response */
-        .prose h3 { font-size: 1.1em; font-weight: bold; margin-top: 1.2em; margin-bottom: 0.5em; color: #5f9ea0; border-bottom: 2px solid #e0f2f2; padding-bottom: 4px; }
-        .prose strong { color: #5f9ea0; font-weight: 600; background: linear-gradient(transparent 60%, #e0f2f2 60%); }
-        .prose blockquote { border-left: 4px solid #96c6c7; padding-left: 1em; background-color: #f0f9f9; padding: 0.5em 1em; border-radius: 0 4px 4px 0; font-style: italic; color: #475569; }
+        :root {
+            --primary: #96c6c7;
+            --primary-dark: #5f9ea0;
+            --primary-darker: #4a8385;
+            --primary-light: #b8d8d9;
+            --primary-lighter: #e0f2f2;
+            --accent: #ff8c00;
+            --accent-light: #ffb84d;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2f2 50%, #f0f9ff 100%);
+            background-attachment: fixed;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            height: 320px;
+        }
+
+        /* Enhanced Card Styles */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(150, 198, 199, 0.2);
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 12px -4px rgba(0, 0, 0, 0.06);
+        }
+
+        /* KPI Card Styles */
+        .kpi-card {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
+        }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: 16px 0 0 16px;
+        }
+        .kpi-card.teal::before { background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%); }
+        .kpi-card.emerald::before { background: linear-gradient(180deg, #34d399 0%, #10b981 100%); }
+        .kpi-card.orange::before { background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%); }
+        .kpi-card.purple::before { background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 100%); }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .kpi-icon.teal { background: linear-gradient(135deg, var(--primary-lighter) 0%, var(--primary-light) 100%); }
+        .kpi-icon.emerald { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); }
+        .kpi-icon.orange { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
+        .kpi-icon.purple { background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); }
+
+        /* Trend Indicator */
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+        .trend-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .trend-badge.up { background: #d1fae5; color: #059669; }
+        .trend-badge.down { background: #fee2e2; color: #dc2626; }
+        .trend-badge.neutral { background: #f1f5f9; color: #64748b; }
+
+        /* Navigation Styles */
+        .nav-container {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(150, 198, 199, 0.3);
+        }
+
+        .nav-btn {
+            position: relative;
+            padding: 0.6rem 1rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #64748b;
+        }
+        .nav-btn:hover:not(.active) {
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+        }
+        .nav-btn.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px -2px rgba(95, 158, 160, 0.4);
+        }
+        .nav-btn.special {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-darker) 100%);
+            color: white;
+            box-shadow: 0 4px 12px -2px rgba(95, 158, 160, 0.3);
+        }
+        .nav-btn.special:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        /* Category Switcher */
+        .cat-switch {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .cat-btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #64748b;
+        }
+        .cat-btn.active {
+            background: white;
+            color: var(--primary-dark);
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        /* Section Header */
+        .section-header {
+            position: relative;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 2px;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: -0.02em;
+        }
+        .section-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        /* Ranking Card */
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            background: #fafafa;
+            margin-bottom: 0.5rem;
+        }
+        .ranking-item:hover {
+            background: var(--primary-lighter);
+            transform: translateX(4px);
+        }
+        .ranking-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+            margin-right: 0.875rem;
+        }
+        .ranking-badge.gold { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; }
+        .ranking-badge.silver { background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%); color: white; }
+        .ranking-badge.bronze { background: linear-gradient(135deg, #fdba74 0%, #f97316 100%); color: white; }
+        .ranking-badge.normal { background: #f1f5f9; color: #64748b; }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .data-table thead th {
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 0.875rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+        .data-table tbody tr:hover {
+            background: var(--primary-lighter);
+        }
+        .data-table tbody td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+        }
+
+        /* Prose Styles for AI Content */
+        .prose h3 {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-top: 1.25em;
+            margin-bottom: 0.5em;
+            color: var(--primary-dark);
+            border-bottom: 2px solid var(--primary-lighter);
+            padding-bottom: 4px;
+        }
+        .prose strong {
+            color: var(--primary-dark);
+            font-weight: 600;
+            background: linear-gradient(transparent 60%, var(--primary-lighter) 60%);
+        }
+        .prose blockquote {
+            border-left: 4px solid var(--primary);
+            padding-left: 1em;
+            background-color: #f0f9f9;
+            padding: 0.75em 1em;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: #475569;
+        }
 
         /* Loading Animation */
         .typing-indicator span {
             display: inline-block;
-            width: 6px;
-            height: 6px;
-            background-color: #96c6c7;
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             border-radius: 50%;
             animation: typing 1s infinite;
-            margin: 0 2px;
+            margin: 0 3px;
         }
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes typing {
             0%, 100% { transform: translateY(0); opacity: 0.5; }
-            50% { transform: translateY(-5px); opacity: 1; }
+            50% { transform: translateY(-6px); opacity: 1; }
         }
+
+        /* Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+        .animate-delay-4 { animation-delay: 0.4s; }
+
+        /* Pulse animation for live data */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        /* Mini chart sparkline area */
+        .mini-chart {
+            height: 40px;
+            opacity: 0.8;
+        }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col">
 
     <!-- Header & Navigation -->
-    <nav class="bg-white shadow sticky top-0 z-50 border-b border-slate-200">
+    <nav class="nav-container sticky top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
-                <div class="flex items-center gap-4">
-                    <span class="text-lg font-bold text-slate-800 tracking-tight">
-                        📊 B.C consulting <span class="text-theme">tools</span>
-                    </span>
-                    <!-- Category Switcher -->
-                    <div class="hidden md:flex bg-slate-100 rounded-lg p-1 ml-6">
-                        <button onclick="switchCategory('bust')" id="cat-bust" class="px-4 py-1 text-sm rounded-md transition-all shadow-sm bg-white text-theme font-bold">バスト・肌ケア</button>
-                        <button onclick="switchCategory('nail')" id="cat-nail" class="px-4 py-1 text-sm rounded-md transition-all text-slate-500 hover:text-slate-700">ネイル事業</button>
+                <div class="flex items-center gap-6">
+                    <!-- Logo -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#96c6c7] to-[#5f9ea0] flex items-center justify-content-center shadow-lg">
+                            <span class="text-white text-lg font-bold w-full text-center">BC</span>
+                        </div>
+                        <div>
+                            <span class="text-lg font-bold text-slate-800 tracking-tight">B.C consulting</span>
+                            <span class="text-lg font-bold text-[#5f9ea0]"> tools</span>
+                        </div>
+                    </div>
+                    <!-- Category Switcher Desktop -->
+                    <div class="hidden md:flex cat-switch">
+                        <button onclick="switchCategory('bust')" id="cat-bust" class="cat-btn active">バスト・肌ケア</button>
+                        <button onclick="switchCategory('nail')" id="cat-nail" class="cat-btn">ネイル事業</button>
                     </div>
                 </div>
-                <div class="flex space-x-2 items-center overflow-x-auto">
-                    <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn active px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">全体分析</button>
-                    <button onclick="switchView('details')" id="nav-details" class="nav-btn px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">店舗詳細</button>
-                    <button onclick="switchView('marketing')" id="nav-marketing" class="nav-btn px-3 py-2 rounded-lg text-sm transition whitespace-nowrap bg-gradient-to-r from-[#96c6c7] to-[#5f9ea0] text-white hover:opacity-90 shadow-md flex items-center"><span class="mr-1">✨</span>AI集客コピー</button>
-                    <button onclick="switchView('strategy')" id="nav-strategy" class="nav-btn px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">コンサルAI</button>
+                <!-- Navigation Buttons -->
+                <div class="flex items-center gap-2">
+                    <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn active">
+                        <span class="hidden sm:inline">全体分析</span>
+                        <span class="sm:hidden">分析</span>
+                    </button>
+                    <button onclick="switchView('details')" id="nav-details" class="nav-btn">
+                        <span class="hidden sm:inline">店舗詳細</span>
+                        <span class="sm:hidden">詳細</span>
+                    </button>
+                    <button onclick="switchView('marketing')" id="nav-marketing" class="nav-btn special">
+                        <span class="mr-1">✨</span>
+                        <span class="hidden sm:inline">AI集客コピー</span>
+                        <span class="sm:hidden">AI</span>
+                    </button>
+                    <button onclick="switchView('strategy')" id="nav-strategy" class="nav-btn">
+                        <span class="hidden sm:inline">コンサルAI</span>
+                        <span class="sm:hidden">相談</span>
+                    </button>
                 </div>
             </div>
             <!-- Mobile Category Switcher -->
-            <div class="md:hidden pb-3 pt-1 flex justify-center">
-                <div class="bg-slate-100 rounded-lg p-1 flex">
-                    <button onclick="switchCategory('bust')" id="cat-bust-m" class="px-4 py-1 text-xs rounded-md transition-all shadow-sm bg-white text-theme font-bold">バスト・肌ケア</button>
-                    <button onclick="switchCategory('nail')" id="cat-nail-m" class="px-4 py-1 text-xs rounded-md transition-all text-slate-500">ネイル</button>
+            <div class="md:hidden pb-3 flex justify-center">
+                <div class="cat-switch">
+                    <button onclick="switchCategory('bust')" id="cat-bust-m" class="cat-btn active text-xs">バスト・肌ケア</button>
+                    <button onclick="switchCategory('nail')" id="cat-nail-m" class="cat-btn text-xs">ネイル</button>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
 
         <!-- VIEW 1: DASHBOARD OVERVIEW -->
-        <section id="view-dashboard" class="space-y-6 animate-fade-in">
-            <div class="flex justify-between items-end border-b pb-4 border-slate-200">
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-800">全体パフォーマンス推移</h1>
-                    <p class="text-sm text-slate-500 mt-1">選択中の事業部: <span id="current-cat-label" class="font-bold text-theme">バスト・肌ケア</span> (2025年4月〜2026年1月)</p>
+        <section id="view-dashboard" class="space-y-8">
+            <!-- Section Header -->
+            <div class="section-header">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="section-title">全体パフォーマンス推移</h1>
+                        <p class="section-subtitle">
+                            <span class="inline-flex items-center gap-2">
+                                <span class="pulse-dot"></span>
+                                選択中: <span id="current-cat-label" class="font-semibold text-[#5f9ea0]">バスト・肌ケア</span>
+                            </span>
+                            <span class="text-slate-400 mx-2">|</span>
+                            2025年4月〜2026年1月
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-500">最終更新</span>
+                        <span class="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded-md">2026/01</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- KPI Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="card p-5 border-l-4 border-[#96c6c7]">
-                    <p class="text-xs font-bold text-slate-400 uppercase">期間合計 PV数</p>
-                    <p class="text-2xl font-bold text-slate-800 metric-value mt-1" id="kpi-total-pv">-</p>
+            <!-- KPI Cards with Trends -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                <!-- Total PV -->
+                <div class="card kpi-card teal p-5 animate-fade-in-up">
+                    <div class="flex items-start justify-between">
+                        <div class="kpi-icon teal">
+                            <svg class="w-6 h-6 text-[#5f9ea0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </div>
+                        <span id="kpi-pv-trend" class="trend-badge neutral">-</span>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">期間合計 PV数</p>
+                        <p class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total-pv">-</p>
+                    </div>
                 </div>
-                <div class="card p-5 border-l-4 border-[#7ab0b1]">
-                    <p class="text-xs font-bold text-slate-400 uppercase">期間合計 新規数</p>
-                    <p class="text-2xl font-bold text-slate-800 metric-value mt-1" id="kpi-total-new">-</p>
+
+                <!-- Total New Customers -->
+                <div class="card kpi-card emerald p-5 animate-fade-in-up animate-delay-1">
+                    <div class="flex items-start justify-between">
+                        <div class="kpi-icon emerald">
+                            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                            </svg>
+                        </div>
+                        <span id="kpi-new-trend" class="trend-badge neutral">-</span>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">期間合計 新規数</p>
+                        <p class="text-3xl font-bold text-slate-800 mt-1" id="kpi-total-new">-</p>
+                    </div>
                 </div>
-                <div class="card p-5 border-l-4 border-emerald-500">
-                    <p class="text-xs font-bold text-slate-400 uppercase">平均CVR (新規/PV)</p>
-                    <p class="text-2xl font-bold text-slate-800 metric-value mt-1" id="kpi-avg-cvr">-</p>
+
+                <!-- Average CVR -->
+                <div class="card kpi-card orange p-5 animate-fade-in-up animate-delay-2">
+                    <div class="flex items-start justify-between">
+                        <div class="kpi-icon orange">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                        <span id="kpi-cvr-trend" class="trend-badge neutral">-</span>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">平均CVR</p>
+                        <p class="text-3xl font-bold text-slate-800 mt-1" id="kpi-avg-cvr">-</p>
+                    </div>
                 </div>
-                <div class="card p-5 border-l-4 border-purple-400">
-                    <p class="text-xs font-bold text-slate-400 uppercase">分析対象店舗数</p>
-                    <p class="text-2xl font-bold text-slate-800 metric-value mt-1" id="kpi-active-salons">-</p>
+
+                <!-- Active Salons -->
+                <div class="card kpi-card purple p-5 animate-fade-in-up animate-delay-3">
+                    <div class="flex items-start justify-between">
+                        <div class="kpi-icon purple">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                        <span class="text-xs text-slate-400">店舗数</span>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">分析対象店舗</p>
+                        <p class="text-3xl font-bold text-slate-800 mt-1" id="kpi-active-salons">-</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Main Trend Chart -->
-            <div class="card p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-slate-800">月別推移：PV数 vs 新規獲得数</h2>
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <!-- Main Trend Chart -->
+                <div class="xl:col-span-2 card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">月別推移</h2>
+                            <p class="text-sm text-slate-500">PV数 vs 新規獲得数</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs">
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-[#5f9ea0]"></span>
+                                PV数
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-[#ff8c00]"></span>
+                                新規
+                            </span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="trendChart"></canvas>
+
+                <!-- Store Ranking -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800">店舗ランキング</h2>
+                            <p class="text-sm text-slate-500">CVR効率 TOP5</p>
+                        </div>
+                        <select id="ranking-type" onchange="updateRanking()" class="text-xs border border-slate-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-[#96c6c7] focus:border-[#96c6c7]">
+                            <option value="cvr">CVR効率</option>
+                            <option value="pv">PV数</option>
+                            <option value="new">新規数</option>
+                        </select>
+                    </div>
+                    <div id="ranking-list" class="space-y-1">
+                        <!-- JS Populated -->
+                    </div>
                 </div>
             </div>
-             <!-- Comparison Table -->
-             <div class="card p-6">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">月次データ詳細</h2>
-                <div class="overflow-x-auto custom-scrollbar h-[300px]">
-                    <table class="min-w-full divide-y divide-slate-200">
-                        <thead class="bg-slate-50 sticky top-0 z-10">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-xs font-bold text-slate-500">年月</th>
-                                <th class="px-3 py-2 text-right text-xs font-bold text-slate-500">合計PV</th>
-                                <th class="px-3 py-2 text-right text-xs font-bold text-slate-500">合計新規数</th>
-                                <th class="px-3 py-2 text-right text-xs font-bold text-slate-500">平均CVR</th>
-                            </tr>
-                        </thead>
-                        <tbody id="monthly-table-body" class="bg-white divide-y divide-slate-100 text-sm">
-                            <!-- JS Populated -->
-                        </tbody>
-                    </table>
+
+            <!-- Monthly Data Table & Quick Stats -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <!-- Monthly Table -->
+                <div class="xl:col-span-2 card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-slate-800">月次データ詳細</h2>
+                        <span class="text-xs text-slate-400">スクロールで全期間表示</span>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar max-h-[320px]">
+                        <table class="data-table">
+                            <thead class="sticky top-0 z-10">
+                                <tr>
+                                    <th class="text-left rounded-tl-lg">年月</th>
+                                    <th class="text-right">合計PV</th>
+                                    <th class="text-right">合計新規</th>
+                                    <th class="text-right">CVR</th>
+                                    <th class="text-right rounded-tr-lg">前月比PV</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthly-table-body">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Summary -->
+                <div class="card p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4">クイックサマリー</h2>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-100">
+                            <p class="text-xs font-semibold text-emerald-600 uppercase mb-1">Best Month (PV)</p>
+                            <p id="best-month-pv" class="text-lg font-bold text-slate-800">-</p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
+                            <p class="text-xs font-semibold text-amber-600 uppercase mb-1">Best Month (新規)</p>
+                            <p id="best-month-new" class="text-lg font-bold text-slate-800">-</p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                            <p class="text-xs font-semibold text-purple-600 uppercase mb-1">Best CVR Store</p>
+                            <p id="best-cvr-store" class="text-lg font-bold text-slate-800 truncate">-</p>
+                        </div>
+                        <div class="p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-slate-200">
+                            <p class="text-xs font-semibold text-slate-600 uppercase mb-1">直営 vs FC</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <div class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                    <div id="direct-ratio-bar" class="h-full bg-gradient-to-r from-[#96c6c7] to-[#5f9ea0] rounded-full" style="width: 50%"></div>
+                                </div>
+                                <span id="direct-fc-ratio" class="text-sm font-semibold text-slate-700">-</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- VIEW 2: MARKETING AI -->
         <section id="view-marketing" class="space-y-6 hidden">
-            <div class="flex justify-between items-end border-b pb-4 border-slate-200">
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-800">HPB集客コピー自動生成</h1>
-                    <p class="text-sm text-slate-500 mt-1">「美人バスト」独自の強み（医療提携、98%成功実績）を学習済みのAIが、トレンドに合わせた文章を作成します。</p>
-                </div>
+            <div class="section-header">
+                <h1 class="section-title">HPB集客コピー自動生成</h1>
+                <p class="section-subtitle">「美人バスト」独自の強み（医療提携、98%成功実績）を学習済みのAIが、トレンドに合わせた文章を作成します。</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Input Panel -->
                 <div class="col-span-1 space-y-4">
-                    <div class="card p-5">
-                        <h2 class="font-bold text-slate-800 mb-4 flex items-center"><span class="text-xl mr-2">⚙️</span> 生成設定</h2>
-                        
-                        <div class="space-y-4">
+                    <div class="card p-6">
+                        <h2 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#96c6c7] to-[#5f9ea0] flex items-center justify-center">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </span>
+                            生成設定
+                        </h2>
+
+                        <div class="space-y-5">
                             <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">1. 作成するコンテンツ</label>
-                                <select id="mkt-type" class="w-full border border-slate-300 rounded p-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">1. 作成するコンテンツ</label>
+                                <select id="mkt-type" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm bg-white">
                                     <option value="catch_copy">キャッチコピー案 (一覧)</option>
                                     <option value="body_copy">フォトギャラリー/ブログ本文</option>
                                     <option value="campaign">新キャンペーン・クーポン企画</option>
@@ -171,8 +607,8 @@
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">2. ターゲット層</label>
-                                <select id="mkt-target" class="w-full border border-slate-300 rounded p-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">2. ターゲット層</label>
+                                <select id="mkt-target" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm bg-white">
                                     <option value="general">全般 (バストアップしたい方)</option>
                                     <option value="skinny">痩せ型で大きくならない方</option>
                                     <option value="postpartum">産後の下垂・形崩れに悩む方</option>
@@ -182,33 +618,47 @@
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">3. 季節・トレンド要素</label>
-                                <input type="text" id="mkt-trend" class="w-full border border-slate-300 rounded p-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm" placeholder="例: 正月太り解消、春の出会い、薄着の季節">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">3. 季節・トレンド要素</label>
+                                <input type="text" id="mkt-trend" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm" placeholder="例: 正月太り解消、春の出会い、薄着の季節">
                             </div>
 
-                            <button onclick="generateMarketingContent()" class="w-full bg-gradient-to-r from-[#96c6c7] to-[#5f9ea0] hover:opacity-90 text-white py-3 rounded-lg font-bold shadow-lg transform transition active:scale-95 flex justify-center items-center">
-                                <span class="mr-2">✨</span> AIで生成する
+                            <button onclick="generateMarketingContent()" class="w-full bg-gradient-to-r from-[#96c6c7] to-[#5f9ea0] hover:from-[#7ab0b1] hover:to-[#4a8385] text-white py-3.5 rounded-xl font-bold shadow-lg transform transition-all active:scale-[0.98] flex justify-center items-center gap-2">
+                                <span>✨</span> AIで生成する
                             </button>
                         </div>
                     </div>
-                    
-                    <div class="bg-cyan-50 p-4 rounded-lg border border-cyan-100 text-xs text-cyan-800">
-                        <strong>💡 ポイント:</strong><br>
-                        生成されたコピーはHot Pepper Beautyの文字数制限（キャッチコピー等）に合わせて調整して使用してください。
+
+                    <div class="bg-gradient-to-r from-cyan-50 to-teal-50 p-4 rounded-xl border border-cyan-100 text-sm text-cyan-800">
+                        <div class="flex items-start gap-2">
+                            <span class="text-lg">💡</span>
+                            <p><strong>ポイント:</strong> 生成されたコピーはHot Pepper Beautyの文字数制限に合わせて調整してください。</p>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Output Panel -->
                 <div class="col-span-2">
-                    <div id="mkt-output-card" class="card h-full min-h-[500px] flex flex-col relative">
-                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-lg">
-                            <h3 class="font-bold text-slate-700">生成結果</h3>
-                            <button onclick="copyToClipboard('mkt-result-content')" class="text-xs bg-white border border-slate-300 px-3 py-1 rounded hover:bg-slate-50 text-slate-600">コピーする</button>
+                    <div id="mkt-output-card" class="card h-full min-h-[520px] flex flex-col">
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-slate-50 to-gray-50 rounded-t-2xl">
+                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-[#5f9ea0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                生成結果
+                            </h3>
+                            <button onclick="copyToClipboard('mkt-result-content')" class="text-xs bg-white border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 text-slate-600 flex items-center gap-1.5 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                                コピー
+                            </button>
                         </div>
                         <div id="mkt-result-area" class="p-6 flex-grow overflow-y-auto custom-scrollbar">
                             <div class="h-full flex flex-col justify-center items-center text-slate-400">
-                                <span class="text-4xl mb-4">🪄</span>
-                                <p>左側のメニューを設定して<br>「生成する」ボタンを押してください</p>
+                                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-[#e0f2f2] to-[#b8d8d9] flex items-center justify-center mb-4">
+                                    <span class="text-4xl">🪄</span>
+                                </div>
+                                <p class="text-center">左側のメニューを設定して<br>「生成する」ボタンを押してください</p>
                             </div>
                         </div>
                     </div>
@@ -218,18 +668,16 @@
 
         <!-- VIEW 3: SALON DETAILS -->
         <section id="view-details" class="space-y-6 hidden">
-             <div class="flex justify-between items-end border-b pb-4 border-slate-200">
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-800">店舗別 詳細分析</h1>
-                    <p class="text-sm text-slate-500 mt-1">個別の店舗の月次推移を確認し、異常値の原因を特定します。</p>
-                </div>
+            <div class="section-header">
+                <h1 class="section-title">店舗別 詳細分析</h1>
+                <p class="section-subtitle">個別の店舗の月次推移を確認し、異常値の原因を特定します。</p>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <!-- Sidebar Selector -->
-                <div class="col-span-1 card p-4 h-fit bg-white">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">店舗を選択してください</label>
-                    <select id="salon-selector" class="block w-full text-base border-slate-300 focus:outline-none focus:ring-[#96c6c7] focus:border-[#96c6c7] rounded-md py-2" size="15">
+                <div class="col-span-1 card p-5">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-3">店舗を選択</label>
+                    <select id="salon-selector" class="block w-full text-sm border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] rounded-xl py-2.5 bg-white" size="12">
                         <!-- Populated by JS -->
                     </select>
                 </div>
@@ -237,14 +685,14 @@
                 <!-- Detail Content -->
                 <div class="col-span-3 space-y-6">
                     <div class="card p-6">
-                        <div class="flex justify-between items-center mb-6">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                             <div>
                                 <h2 id="detail-title" class="text-2xl font-bold text-slate-800">店舗を選択してください</h2>
-                                <span id="detail-type" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 mt-2 inline-block">-</span>
+                                <span id="detail-type" class="inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#e0f2f2] to-[#b8d8d9] text-[#5f9ea0]">-</span>
                             </div>
-                            <div class="text-right">
-                                <div class="text-sm text-slate-500">平均月間PV</div>
-                                <div id="detail-avg-pv" class="text-2xl font-bold text-slate-800 font-mono">-</div>
+                            <div class="text-right bg-slate-50 rounded-xl p-4">
+                                <div class="text-xs text-slate-500 uppercase font-semibold">平均月間PV</div>
+                                <div id="detail-avg-pv" class="text-2xl font-bold text-slate-800 font-mono mt-1">-</div>
                             </div>
                         </div>
                         <div class="chart-container">
@@ -253,21 +701,21 @@
                     </div>
                     <!-- Table -->
                     <div class="card p-6">
-                         <h3 class="font-bold text-slate-800 mb-3">推移データ一覧</h3>
-                         <div class="overflow-x-auto">
-                             <table class="min-w-full text-sm text-left">
-                                 <thead>
-                                     <tr class="border-b border-slate-200 bg-slate-50">
-                                         <th class="py-3 px-4 font-bold text-slate-600">年月</th>
-                                         <th class="py-3 px-4 font-bold text-slate-600">プラン</th>
-                                         <th class="py-3 px-4 text-right font-bold text-slate-600">PV数</th>
-                                         <th class="py-3 px-4 text-right font-bold text-slate-600">新規数</th>
-                                         <th class="py-3 px-4 text-right font-bold text-slate-600">PV前月比</th>
-                                     </tr>
-                                 </thead>
-                                 <tbody id="detail-table-body" class="divide-y divide-slate-100"></tbody>
-                             </table>
-                         </div>
+                        <h3 class="font-bold text-slate-800 mb-4">推移データ一覧</h3>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left rounded-tl-lg">年月</th>
+                                        <th class="text-left">プラン</th>
+                                        <th class="text-right">PV数</th>
+                                        <th class="text-right">新規数</th>
+                                        <th class="text-right rounded-tr-lg">PV前月比</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detail-table-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -275,37 +723,49 @@
 
         <!-- VIEW 4: STRATEGY & CHAT -->
         <section id="view-strategy" class="space-y-6 hidden">
-            <div class="flex justify-between items-end border-b pb-4 border-slate-200">
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-800">AIコンサルタント・チャット</h1>
-                    <p class="text-sm text-slate-500 mt-1">集客データに関する質問や、戦略の壁打ち相手としてご利用ください。</p>
-                </div>
+            <div class="section-header">
+                <h1 class="section-title">AIコンサルタント・チャット</h1>
+                <p class="section-subtitle">集客データに関する質問や、戦略の壁打ち相手としてご利用ください。</p>
             </div>
 
             <!-- AI Chat Interface -->
-            <div class="card p-6 border-t-4 border-[#96c6c7] flex flex-col h-[600px]">
-                <div id="chat-history" class="flex-grow overflow-y-auto custom-scrollbar p-4 bg-slate-50 rounded-lg mb-4 space-y-4">
+            <div class="card p-6 flex flex-col h-[600px]" style="border-top: 4px solid #96c6c7;">
+                <div id="chat-history" class="flex-grow overflow-y-auto custom-scrollbar p-4 bg-gradient-to-b from-slate-50 to-white rounded-xl mb-4 space-y-4">
                     <div class="flex items-start">
-                        <div class="bg-cyan-50 text-cyan-900 p-3 rounded-lg rounded-tl-none text-sm max-w-[80%]">
-                            こんにちは！サロン集客データのアシスタントです。データ分析や対策について質問してください。<br>例：「一番効率が良い店舗は？」「1月の集客状況は？」
+                        <div class="bg-gradient-to-r from-cyan-50 to-teal-50 text-slate-700 p-4 rounded-2xl rounded-tl-none text-sm max-w-[80%] border border-cyan-100">
+                            <p class="font-semibold text-[#5f9ea0] mb-2">🤖 AIアシスタント</p>
+                            こんにちは！サロン集客データのアシスタントです。データ分析や対策について質問してください。<br><br>
+                            <span class="text-slate-500">例：「一番効率が良い店舗は？」「1月の集客状況は？」</span>
                         </div>
                     </div>
                 </div>
                 <!-- Input Area -->
-                <div class="flex gap-2">
-                    <input type="text" id="chat-input" class="flex-grow border border-slate-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#96c6c7]" placeholder="質問を入力してください...">
-                    <button onclick="sendChatMessage()" class="bg-theme bg-theme-hover text-white px-6 py-2 rounded-lg font-bold transition">送信</button>
+                <div class="flex gap-3">
+                    <input type="text" id="chat-input" class="flex-grow border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#96c6c7] focus:border-[#96c6c7] text-sm" placeholder="質問を入力してください...">
+                    <button onclick="sendChatMessage()" class="bg-gradient-to-r from-[#96c6c7] to-[#5f9ea0] hover:from-[#7ab0b1] hover:to-[#4a8385] text-white px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2">
+                        <span>送信</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </section>
 
     </main>
 
+    <!-- Footer -->
+    <footer class="bg-white/80 backdrop-blur border-t border-slate-200 mt-auto py-4">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            © 2026 B.C consulting tools - Powered by AI
+        </div>
+    </footer>
+
     <!-- JavaScript Logic -->
     <script>
         const apiKey = ""; // Environment Variable
 
-        // --- SALON BRAND CONTEXT (Extracted from URL) ---
+        // --- SALON BRAND CONTEXT ---
         const BRAND_CONTEXT = `
         【サロン名】美人バスト（表参道店を基準）
         【コンセプト】医療提携バストアップ専門店。定額制（サブスク）あり。
@@ -352,15 +812,13 @@
             const trend = document.getElementById('mkt-trend').value;
             const resultArea = document.getElementById('mkt-result-area');
 
-            // Set Loading State
-            resultArea.innerHTML = '<div class="h-full flex flex-col justify-center items-center text-[#5f9ea0]"><div class="typing-indicator"><span></span><span></span><span></span></div><p class="mt-4 text-sm font-bold">AIが最適なコピーを考案中...</p></div>';
+            resultArea.innerHTML = '<div class="h-full flex flex-col justify-center items-center text-[#5f9ea0]"><div class="typing-indicator"><span></span><span></span><span></span></div><p class="mt-4 text-sm font-semibold">AIが最適なコピーを考案中...</p></div>';
 
-            // Construct Prompt
             let instruction = `あなたはHot Pepper Beauty（ホットペッパービューティー）の熟練コピーライターです。
             以下のサロン情報（BRAND_CONTEXT）を基に、指定されたターゲットと季節感に合わせた集客コンテンツを作成してください。
             Markdown形式で出力し、重要な部分は太字にしてください。
             絵文字を適度に使用し、女性がクリックしたくなるような共感性の高い文章にしてください。`;
-            
+
             let userPrompt = `
             【サロン情報】
             ${BRAND_CONTEXT}
@@ -369,7 +827,7 @@
             ・コンテンツ種類: ${getTypeLabel(type)}
             ・ターゲット層: ${getTargetLabel(target)}
             ・季節/トレンド要素: ${trend || '指定なし（今の季節感に合わせて）'}
-            ・現在の年月: 2026年1月（または直近の季節）
+            ・現在の年月: 2026年1月
 
             【出力要件】
             `;
@@ -407,11 +865,8 @@
                 `;
             }
 
-            // Call API
             const result = await callGeminiAPI(userPrompt, instruction);
-            
-            // Render Result
-            resultArea.innerHTML = `<div id="mkt-result-content" class="prose max-w-none text-slate-700 text-sm">${marked.parse(result)}</div>`;
+            resultArea.innerHTML = `<div id="mkt-result-content" class="prose max-w-none text-slate-700 text-sm leading-relaxed">${marked.parse(result)}</div>`;
         }
 
         function getTypeLabel(val) {
@@ -425,10 +880,7 @@
         function copyToClipboard(id) {
             const el = document.getElementById(id);
             if(!el) return;
-            const text = el.innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                alert('コピーしました！');
-            });
+            navigator.clipboard.writeText(el.innerText).then(() => alert('コピーしました！'));
         }
 
         // --- CHAT LOGIC ---
@@ -438,15 +890,14 @@
             if (!text) return;
 
             const history = document.getElementById('chat-history');
-            history.innerHTML += `<div class="flex justify-end"><div class="bg-slate-200 text-slate-800 p-3 rounded-lg rounded-tr-none text-sm max-w-[80%]">${text}</div></div>`;
+            history.innerHTML += `<div class="flex justify-end"><div class="bg-gradient-to-r from-slate-100 to-slate-200 text-slate-800 p-4 rounded-2xl rounded-tr-none text-sm max-w-[80%]">${text}</div></div>`;
             input.value = '';
             history.scrollTop = history.scrollHeight;
 
             const loadingId = 'loading-' + Date.now();
-            history.innerHTML += `<div class="flex items-start" id="${loadingId}"><div class="bg-cyan-50 text-cyan-900 p-3 rounded-lg rounded-tl-none text-sm max-w-[80%]"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
+            history.innerHTML += `<div class="flex items-start" id="${loadingId}"><div class="bg-gradient-to-r from-cyan-50 to-teal-50 text-cyan-900 p-4 rounded-2xl rounded-tl-none text-sm max-w-[80%] border border-cyan-100"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>`;
             history.scrollTop = history.scrollHeight;
 
-            // Simplified Data Context for Chat
             const contextData = rawData.filter(d => d.category === state.currentCategory).map(d => `${d.date} ${d.name}: PV${d.pv}, 新規${d.new}`).join('\n');
             const prompt = `ユーザー質問: ${text}\n\n関連データ:\n${contextData.substring(0,5000)}`;
             const system = `あなたは美容サロンのデータ分析コンサルタントです。提供されたデータに基づいて日本語で回答してください。`;
@@ -454,15 +905,15 @@
             const responseText = await callGeminiAPI(prompt, system);
 
             document.getElementById(loadingId).remove();
-            history.innerHTML += `<div class="flex items-start"><div class="bg-cyan-50 text-cyan-900 p-3 rounded-lg rounded-tl-none text-sm max-w-[80%] prose">${marked.parse(responseText)}</div></div>`;
+            history.innerHTML += `<div class="flex items-start"><div class="bg-gradient-to-r from-cyan-50 to-teal-50 text-slate-700 p-4 rounded-2xl rounded-tl-none text-sm max-w-[80%] prose border border-cyan-100">${marked.parse(responseText)}</div></div>`;
             history.scrollTop = history.scrollHeight;
         }
 
 
         // --- CORE APP LOGIC ---
-        
-        // FULL Raw Data (April 2025 to Jan 2026)
-         const rawData = [
+
+        // Raw Data
+        const rawData = [
             // April
             { date: "2025/04", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1453, new: 6 },
             { date: "2025/04", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1294, new: 6 },
@@ -475,7 +926,7 @@
             { date: "2025/05", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1693, new: 15 },
             { date: "2025/05", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1586, new: 12 },
             { date: "2025/05", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1193, new: 12 },
-            { date: "2025/05", name: "シミゼロ美人 品川高輪", type: "直営", plan: "ライトS", pv: 1305, new: 10 },
+            { date: "2025/05", name: "シミケアZERO美人 品川高輪", type: "直営", plan: "ライトS", pv: 1305, new: 10 },
             { date: "2025/05", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 2809, new: 29 },
             { date: "2025/05", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1758, new: 7 },
             { date: "2025/05", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 1069, new: 7 },
@@ -582,7 +1033,7 @@
             { date: "2025/12", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 603, new: 4 },
             { date: "2025/12", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 1125, new: 3 },
             { date: "2025/12", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 779, new: 2 },
-            { date: "2025/12", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 482, new: 5 }, // Updated based on data
+            { date: "2025/12", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 482, new: 5 },
             { date: "2025/12", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 1137, new: 9 },
             { date: "2025/12", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 974, new: 1 },
             { date: "2025/12", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 1059, new: 9 },
@@ -627,7 +1078,7 @@
         function initApp() {
             const categoryData = rawData.filter(d => d.category === state.currentCategory);
             const salons = [...new Set(categoryData.map(d => d.name))];
-            state.selectedSalon = salons[0] || '美人バスト表参道'; 
+            state.selectedSalon = salons[0] || '美人バスト表参道';
             updateCategoryUI();
             renderDashboard();
             populateSalonSelect();
@@ -646,29 +1097,21 @@
         }
 
         function updateCategoryUI() {
-            const btnBust = document.getElementById('cat-bust');
-            const btnNail = document.getElementById('cat-nail');
-            const btnBustM = document.getElementById('cat-bust-m');
-            const btnNailM = document.getElementById('cat-nail-m');
-
-            const activeClass = "px-4 py-1 text-sm rounded-md transition-all bg-white text-theme font-bold shadow-sm";
-            const inactiveClass = "px-4 py-1 text-sm rounded-md transition-all text-slate-500 hover:text-slate-700 bg-transparent";
-            const activeClassM = "px-4 py-1 text-xs rounded-md transition-all bg-white text-theme font-bold shadow-sm";
-            const inactiveClassM = "px-4 py-1 text-xs rounded-md transition-all text-slate-500 hover:text-slate-700 bg-transparent";
-
-            if (state.currentCategory === 'bust') {
-                btnBust.className = activeClass;
-                btnNail.className = inactiveClass;
-                btnBustM.className = activeClassM;
-                btnNailM.className = inactiveClassM;
-                document.getElementById('current-cat-label').innerText = "バスト・肌ケア事業";
-            } else {
-                btnBust.className = inactiveClass;
-                btnNail.className = activeClass;
-                btnBustM.className = inactiveClassM;
-                btnNailM.className = activeClassM;
-                document.getElementById('current-cat-label').innerText = "ネイル事業";
-            }
+            const btns = [
+                { id: 'cat-bust', active: state.currentCategory === 'bust' },
+                { id: 'cat-nail', active: state.currentCategory === 'nail' },
+                { id: 'cat-bust-m', active: state.currentCategory === 'bust' },
+                { id: 'cat-nail-m', active: state.currentCategory === 'nail' }
+            ];
+            btns.forEach(b => {
+                const el = document.getElementById(b.id);
+                if (b.active) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+            document.getElementById('current-cat-label').innerText = state.currentCategory === 'bust' ? "バスト・肌ケア" : "ネイル事業";
         }
 
         function switchView(viewName) {
@@ -690,9 +1133,8 @@
         let trendChartInstance = null;
         function renderDashboard() {
             const filteredData = rawData.filter(d => d.category === state.currentCategory);
-            // Sort months ensuring year crossing works (simple string sort works for 2025/04 -> 2026/01)
             const months = [...new Set(filteredData.map(d => d.date))].sort();
-            
+
             let totalPV = 0, totalNew = 0;
             const monthlyPV = {}, monthlyNew = {};
 
@@ -703,12 +1145,30 @@
                 monthlyPV[d.date] += d.pv;
                 monthlyNew[d.date] += d.new;
             });
-            
+
+            // Calculate trends (comparing last month to previous)
+            const lastMonth = months[months.length - 1];
+            const prevMonth = months[months.length - 2];
+
+            const pvChange = prevMonth ? ((monthlyPV[lastMonth] - monthlyPV[prevMonth]) / monthlyPV[prevMonth] * 100) : 0;
+            const newChange = prevMonth ? ((monthlyNew[lastMonth] - monthlyNew[prevMonth]) / monthlyNew[prevMonth] * 100) : 0;
+
+            const lastCVR = monthlyPV[lastMonth] > 0 ? (monthlyNew[lastMonth] / monthlyPV[lastMonth]) * 100 : 0;
+            const prevCVR = prevMonth && monthlyPV[prevMonth] > 0 ? (monthlyNew[prevMonth] / monthlyPV[prevMonth]) * 100 : 0;
+            const cvrChange = prevCVR > 0 ? lastCVR - prevCVR : 0;
+
+            // Update KPIs
             document.getElementById('kpi-total-pv').textContent = formatNumber(totalPV);
             document.getElementById('kpi-total-new').textContent = formatNumber(totalNew);
             document.getElementById('kpi-avg-cvr').textContent = totalPV > 0 ? ((totalNew/totalPV)*100).toFixed(2) + '%' : '0%';
             document.getElementById('kpi-active-salons').textContent = [...new Set(filteredData.map(d=>d.name))].length;
 
+            // Update trend badges
+            updateTrendBadge('kpi-pv-trend', pvChange);
+            updateTrendBadge('kpi-new-trend', newChange);
+            updateTrendBadge('kpi-cvr-trend', cvrChange, true);
+
+            // Render main chart
             const ctxTrend = document.getElementById('trendChart').getContext('2d');
             if (trendChartInstance) trendChartInstance.destroy();
             trendChartInstance = new Chart(ctxTrend, {
@@ -716,19 +1176,148 @@
                 data: {
                     labels: months,
                     datasets: [
-                        { label: '合計PV数', data: months.map(m=>monthlyPV[m]), borderColor: '#5f9ea0', backgroundColor: 'rgba(150, 198, 199, 0.2)', yAxisID: 'y', fill: true },
-                        { label: '新規獲得数', data: months.map(m=>monthlyNew[m]), borderColor: '#ff8c00', backgroundColor: 'transparent', yAxisID: 'y1', borderDash: [5,5] }
+                        {
+                            label: '合計PV数',
+                            data: months.map(m=>monthlyPV[m]),
+                            borderColor: '#5f9ea0',
+                            backgroundColor: 'rgba(150, 198, 199, 0.15)',
+                            yAxisID: 'y',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#5f9ea0'
+                        },
+                        {
+                            label: '新規獲得数',
+                            data: months.map(m=>monthlyNew[m]),
+                            borderColor: '#ff8c00',
+                            backgroundColor: 'transparent',
+                            yAxisID: 'y1',
+                            borderDash: [5,5],
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ff8c00'
+                        }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: {display:true, position:'left', title:{display:true, text:'PV'}}, y1: {display:true, position:'right', grid:{drawOnChartArea:false}, title:{display:true, text:'新規'}} } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {display:true, position:'left', title:{display:true, text:'PV', font: {weight: 'bold'}}, grid: { color: 'rgba(0,0,0,0.05)' }},
+                        y1: {display:true, position:'right', grid:{drawOnChartArea:false}, title:{display:true, text:'新規', font: {weight: 'bold'}}}
+                    }
+                }
             });
 
-            // Table
+            // Monthly Table
             const tbody = document.getElementById('monthly-table-body');
             tbody.innerHTML = '';
-            months.forEach(m => {
+            let prevPVTotal = 0;
+            months.forEach((m, idx) => {
                 const pv = monthlyPV[m], nw = monthlyNew[m];
-                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${m}</td><td class="px-3 py-2 text-right">${formatNumber(pv)}</td><td class="px-3 py-2 text-right font-bold">${formatNumber(nw)}</td><td class="px-3 py-2 text-right">${pv>0?((nw/pv)*100).toFixed(2):0}%</td></tr>`;
+                const diff = idx === 0 ? 0 : pv - prevPVTotal;
+                const diffClass = diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-slate-400';
+                const diffIcon = diff > 0 ? '↑' : diff < 0 ? '↓' : '';
+                tbody.innerHTML += `<tr><td class="font-semibold">${m}</td><td class="text-right font-mono">${formatNumber(pv)}</td><td class="text-right font-bold font-mono">${formatNumber(nw)}</td><td class="text-right font-mono">${pv>0?((nw/pv)*100).toFixed(2):0}%</td><td class="text-right font-mono ${diffClass}">${idx===0?'-':`${diffIcon} ${formatNumber(Math.abs(diff))}`}</td></tr>`;
+                prevPVTotal = pv;
+            });
+
+            // Quick Summary
+            let bestPVMonth = months[0], bestNewMonth = months[0];
+            months.forEach(m => {
+                if (monthlyPV[m] > monthlyPV[bestPVMonth]) bestPVMonth = m;
+                if (monthlyNew[m] > monthlyNew[bestNewMonth]) bestNewMonth = m;
+            });
+            document.getElementById('best-month-pv').textContent = `${bestPVMonth} (${formatNumber(monthlyPV[bestPVMonth])} PV)`;
+            document.getElementById('best-month-new').textContent = `${bestNewMonth} (${formatNumber(monthlyNew[bestNewMonth])}名)`;
+
+            // Best CVR Store
+            const storeStats = {};
+            filteredData.forEach(d => {
+                if (!storeStats[d.name]) storeStats[d.name] = { pv: 0, new: 0 };
+                storeStats[d.name].pv += d.pv;
+                storeStats[d.name].new += d.new;
+            });
+            let bestCVRStore = null, bestCVR = 0;
+            Object.entries(storeStats).forEach(([name, stats]) => {
+                const cvr = stats.pv > 0 ? stats.new / stats.pv : 0;
+                if (cvr > bestCVR) { bestCVR = cvr; bestCVRStore = name; }
+            });
+            document.getElementById('best-cvr-store').textContent = bestCVRStore ? `${bestCVRStore.replace('美人バスト','').replace('美人ネイル＋','')} (${(bestCVR*100).toFixed(2)}%)` : '-';
+
+            // Direct vs FC ratio
+            let directPV = 0, fcPV = 0;
+            filteredData.forEach(d => {
+                if (d.type === '直営') directPV += d.pv;
+                else fcPV += d.pv;
+            });
+            const directRatio = (directPV + fcPV) > 0 ? (directPV / (directPV + fcPV)) * 100 : 50;
+            document.getElementById('direct-ratio-bar').style.width = `${directRatio}%`;
+            document.getElementById('direct-fc-ratio').textContent = `${Math.round(directRatio)}:${Math.round(100-directRatio)}`;
+
+            // Render ranking
+            updateRanking();
+        }
+
+        function updateTrendBadge(id, change, isAbsolute = false) {
+            const el = document.getElementById(id);
+            if (change > 0) {
+                el.className = 'trend-badge up';
+                el.innerHTML = `<span>↑</span> ${isAbsolute ? '+' + change.toFixed(2) + 'pt' : '+' + change.toFixed(1) + '%'}`;
+            } else if (change < 0) {
+                el.className = 'trend-badge down';
+                el.innerHTML = `<span>↓</span> ${isAbsolute ? change.toFixed(2) + 'pt' : change.toFixed(1) + '%'}`;
+            } else {
+                el.className = 'trend-badge neutral';
+                el.innerHTML = '- 前月比';
+            }
+        }
+
+        function updateRanking() {
+            const type = document.getElementById('ranking-type').value;
+            const filteredData = rawData.filter(d => d.category === state.currentCategory);
+
+            const storeStats = {};
+            filteredData.forEach(d => {
+                if (!storeStats[d.name]) storeStats[d.name] = { pv: 0, new: 0 };
+                storeStats[d.name].pv += d.pv;
+                storeStats[d.name].new += d.new;
+            });
+
+            let rankings = Object.entries(storeStats).map(([name, stats]) => ({
+                name,
+                pv: stats.pv,
+                new: stats.new,
+                cvr: stats.pv > 0 ? (stats.new / stats.pv) * 100 : 0
+            }));
+
+            if (type === 'cvr') rankings.sort((a, b) => b.cvr - a.cvr);
+            else if (type === 'pv') rankings.sort((a, b) => b.pv - a.pv);
+            else rankings.sort((a, b) => b.new - a.new);
+
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = '';
+            rankings.slice(0, 5).forEach((r, i) => {
+                const badgeClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
+                const value = type === 'cvr' ? `${r.cvr.toFixed(2)}%` : type === 'pv' ? formatNumber(r.pv) : formatNumber(r.new);
+                const shortName = r.name.replace('美人バスト', '').replace('美人ネイル＋', '').replace('シミケアZERO美人 ', '').replace('シミゼロ美人 ', '');
+                list.innerHTML += `
+                    <div class="ranking-item">
+                        <div class="ranking-badge ${badgeClass}">${i + 1}</div>
+                        <div class="flex-grow">
+                            <p class="font-semibold text-slate-800 text-sm truncate">${shortName || r.name}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-slate-800">${value}</p>
+                        </div>
+                    </div>
+                `;
             });
         }
 
@@ -744,14 +1333,14 @@
                 select.appendChild(opt);
             });
         }
-        
+
         let detailChartInstance = null;
         function renderSalonDetail() {
             if(!state.selectedSalon) return;
             const records = rawData.filter(d => d.name === state.selectedSalon);
             document.getElementById('detail-title').textContent = state.selectedSalon;
             document.getElementById('detail-type').textContent = records[0]?.type || '-';
-            
+
             const totalPV = records.reduce((s,r)=>s+r.pv,0);
             document.getElementById('detail-avg-pv').textContent = formatNumber(Math.round(totalPV/records.length));
 
@@ -762,11 +1351,42 @@
                 data: {
                     labels: records.map(r=>r.date),
                     datasets: [
-                        { label: '新規', data: records.map(r=>r.new), backgroundColor: '#fbbf24', yAxisID: 'y', order:2 },
-                        { type: 'line', label: 'PV', data: records.map(r=>r.pv), borderColor: '#334155', yAxisID: 'y1', order:1 }
+                        {
+                            label: '新規',
+                            data: records.map(r=>r.new),
+                            backgroundColor: 'rgba(251, 191, 36, 0.8)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            yAxisID: 'y',
+                            order:2
+                        },
+                        {
+                            type: 'line',
+                            label: 'PV',
+                            data: records.map(r=>r.pv),
+                            borderColor: '#334155',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#334155',
+                            yAxisID: 'y1',
+                            order:1
+                        }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: {display:true, position:'right', grid:{drawOnChartArea:false}}, y1: {display:true, position:'left'} } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    },
+                    scales: {
+                        y: {display:true, position:'right', grid:{drawOnChartArea:false}, title:{display:true, text:'新規'}},
+                        y1: {display:true, position:'left', title:{display:true, text:'PV'}}
+                    }
+                }
             });
 
             const tbody = document.getElementById('detail-table-body');
@@ -774,7 +1394,9 @@
             let prevPV = 0;
             records.forEach((r,i) => {
                 const diff = i===0 ? 0 : r.pv - prevPV;
-                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="py-3 px-4 font-medium">${r.date}</td><td class="py-3 px-4 text-xs text-slate-500">${r.plan}</td><td class="py-3 px-4 text-right">${formatNumber(r.pv)}</td><td class="py-3 px-4 text-right font-bold">${r.new}</td><td class="py-3 px-4 text-right text-xs ${diff>0?'text-green-600':'text-red-500'}">${diff>0?'+':''}${i===0?'-':diff}</td></tr>`;
+                const diffClass = diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-slate-400';
+                const diffIcon = diff > 0 ? '↑' : diff < 0 ? '↓' : '';
+                tbody.innerHTML += `<tr><td class="font-semibold">${r.date}</td><td class="text-xs text-slate-500">${r.plan}</td><td class="text-right font-mono">${formatNumber(r.pv)}</td><td class="text-right font-bold font-mono">${r.new}</td><td class="text-right font-mono ${diffClass}">${i===0?'-':`${diffIcon} ${formatNumber(Math.abs(diff))}`}</td></tr>`;
                 prevPV = r.pv;
             });
         }
