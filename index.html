@@ -14,22 +14,17 @@
         .chart-container { position: relative; width: 100%; max-width: 900px; margin: 0 auto; height: 350px; max-height: 400px; }
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); transition: transform 0.2s; border: 1px solid #e2e8f0; }
         
-        /* Main Theme Color: #96c6c7 */
-        /* For buttons and active states */
+        /* Main Theme Color: #96c6c7 (Teal/Mint) */
         .bg-theme { background-color: #96c6c7; }
         .bg-theme-hover:hover { background-color: #7ab0b1; }
-        .text-theme { color: #5f9ea0; } /* Slightly darker for text readability */
+        .text-theme { color: #5f9ea0; } 
         .border-theme { border-color: #96c6c7; }
-        .ring-theme:focus { --tw-ring-color: #96c6c7; }
-
+        
         .nav-btn.active { background-color: #96c6c7; color: white; font-weight: bold; }
         .nav-btn:not(.active):hover { background-color: #e0f2f2; color: #5f9ea0; }
         
         /* Markdown Styles within AI response */
         .prose h3 { font-size: 1.1em; font-weight: bold; margin-top: 1.2em; margin-bottom: 0.5em; color: #5f9ea0; border-bottom: 2px solid #e0f2f2; padding-bottom: 4px; }
-        .prose h4 { font-size: 1em; font-weight: bold; margin-top: 1em; margin-bottom: 0.4em; color: #1e293b; }
-        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
-        .prose p { margin-bottom: 0.8em; line-height: 1.7; font-size: 0.95rem; }
         .prose strong { color: #5f9ea0; font-weight: 600; background: linear-gradient(transparent 60%, #e0f2f2 60%); }
         .prose blockquote { border-left: 4px solid #96c6c7; padding-left: 1em; background-color: #f0f9f9; padding: 0.5em 1em; border-radius: 0 4px 4px 0; font-style: italic; color: #475569; }
 
@@ -49,7 +44,6 @@
             0%, 100% { transform: translateY(0); opacity: 0.5; }
             50% { transform: translateY(-5px); opacity: 1; }
         }
-        /* Custom Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -96,7 +90,7 @@
             <div class="flex justify-between items-end border-b pb-4 border-slate-200">
                 <div>
                     <h1 class="text-2xl font-bold text-slate-800">全体パフォーマンス推移</h1>
-                    <p class="text-sm text-slate-500 mt-1">選択中の事業部: <span id="current-cat-label" class="font-bold text-theme">バスト・肌ケア</span> (2025年4月〜12月)</p>
+                    <p class="text-sm text-slate-500 mt-1">選択中の事業部: <span id="current-cat-label" class="font-bold text-theme">バスト・肌ケア</span> (2025年4月〜2026年1月)</p>
                 </div>
             </div>
 
@@ -293,7 +287,7 @@
                 <div id="chat-history" class="flex-grow overflow-y-auto custom-scrollbar p-4 bg-slate-50 rounded-lg mb-4 space-y-4">
                     <div class="flex items-start">
                         <div class="bg-cyan-50 text-cyan-900 p-3 rounded-lg rounded-tl-none text-sm max-w-[80%]">
-                            こんにちは！サロン集客データのアシスタントです。データ分析や対策について質問してください。<br>例：「一番効率が良い店舗は？」「12月の落ち込みの原因は？」
+                            こんにちは！サロン集客データのアシスタントです。データ分析や対策について質問してください。<br>例：「一番効率が良い店舗は？」「1月の集客状況は？」
                         </div>
                     </div>
                 </div>
@@ -467,7 +461,7 @@
 
         // --- CORE APP LOGIC ---
         
-        // FULL Raw Data from Prompt
+        // FULL Raw Data (April 2025 to Jan 2026)
          const rawData = [
             // April
             { date: "2025/04", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1453, new: 6 },
@@ -588,11 +582,31 @@
             { date: "2025/12", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 603, new: 4 },
             { date: "2025/12", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 1125, new: 3 },
             { date: "2025/12", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 779, new: 2 },
-            { date: "2025/12", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 0, new: 0 },
+            { date: "2025/12", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 482, new: 5 }, // Updated based on data
             { date: "2025/12", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 1137, new: 9 },
             { date: "2025/12", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 974, new: 1 },
             { date: "2025/12", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 1059, new: 9 },
-            { date: "2025/12", name: "美人＋FCSS", type: "FC", plan: "SS", pv: 239, new: 30 }
+            { date: "2025/12", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 621, new: 6 },
+            { date: "2025/12", name: "美人バスト千早", type: "FC", plan: "ライトS", pv: 992, new: 9 },
+            { date: "2025/12", name: "美人バスト南森町", type: "FC", plan: "ライトS", pv: 509, new: 3 },
+            { date: "2025/12", name: "美人＋FCSS", type: "FC", plan: "SS", pv: 239, new: 3 },
+            // January 2026
+            { date: "2026/01", name: "美人バスト表参道", type: "直営", plan: "ライトS", pv: 1337, new: 5 },
+            { date: "2026/01", name: "美人バスト大阪", type: "直営", plan: "ライトS", pv: 1442, new: 9 },
+            { date: "2026/01", name: "美人バスト那覇", type: "直営", plan: "ライトS", pv: 1732, new: 17 },
+            { date: "2026/01", name: "美人バスト小倉", type: "直営", plan: "ライトS", pv: 1546, new: 11 },
+            { date: "2026/01", name: "シミケアZERO美人 表参道", type: "直営", plan: "ライトS", pv: 840, new: 0 },
+            { date: "2026/01", name: "シミケアZERO美人 那覇", type: "直営", plan: "ライトS", pv: 979, new: 2 },
+            { date: "2026/01", name: "美人ネイル＋品川高輪", type: "直営", plan: "ライトS", pv: 1897, new: 32 },
+            { date: "2026/01", name: "美人バスト川崎", type: "FC", plan: "ライトS", pv: 1404, new: 9 },
+            { date: "2026/01", name: "美人バスト掛川店", type: "FC", plan: "ライトS", pv: 977, new: 2 },
+            { date: "2026/01", name: "美人バスト本厚木", type: "FC", plan: "ライトS", pv: 2299, new: 4 },
+            { date: "2026/01", name: "美人バスト旭川", type: "FC", plan: "ライトS", pv: 1601, new: 12 },
+            { date: "2026/01", name: "美人バスト町田", type: "FC", plan: "ライトS", pv: 1918, new: 1 },
+            { date: "2026/01", name: "美人バスト浄心", type: "FC", plan: "ライトS", pv: 1152, new: 7 },
+            { date: "2026/01", name: "美人バスト千早", type: "FC", plan: "ライトS", pv: 1763, new: 9 },
+            { date: "2026/01", name: "美人バスト南森町", type: "FC", plan: "ライトS", pv: 1314, new: 15 },
+            { date: "2026/01", name: "美人＋FCSS", type: "FC", plan: "SS", pv: 422, new: 2 }
         ];
 
         // Populate category
@@ -676,6 +690,7 @@
         let trendChartInstance = null;
         function renderDashboard() {
             const filteredData = rawData.filter(d => d.category === state.currentCategory);
+            // Sort months ensuring year crossing works (simple string sort works for 2025/04 -> 2026/01)
             const months = [...new Set(filteredData.map(d => d.date))].sort();
             
             let totalPV = 0, totalNew = 0;
