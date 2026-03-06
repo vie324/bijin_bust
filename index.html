@@ -306,6 +306,39 @@
         .animate-delay-3 { animation-delay: 0.3s; }
         .animate-delay-4 { animation-delay: 0.4s; }
 
+        /* Alert styles */
+        .alert-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
+            font-size: 0.8125rem;
+            line-height: 1.5;
+        }
+        .alert-card.alert-danger {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        .alert-card.alert-warning {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+        .alert-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+        .alert-danger .alert-icon { background: #fee2e2; }
+        .alert-warning .alert-icon { background: #fef3c7; }
+
         /* Pulse animation for live data */
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; }
@@ -471,6 +504,19 @@
                         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">分析対象店舗</p>
                         <p class="text-3xl font-bold text-slate-800 mt-1" id="kpi-active-salons">-</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Store Alerts -->
+            <div id="store-alerts" class="space-y-2 animate-fade-in-up" style="display:none;">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                    <h3 class="text-sm font-bold text-slate-700">要注意アラート</h3>
+                    <span id="alert-count" class="text-xs bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-full"></span>
+                </div>
+                <div id="alert-list" class="grid grid-cols-1 md:grid-cols-2 gap-2">
                 </div>
             </div>
 
@@ -1377,6 +1423,80 @@
 
             // Render ranking
             updateRanking();
+
+            // Generate store alerts
+            renderAlerts(filteredData, months);
+        }
+
+        function renderAlerts(filteredData, months) {
+            const alerts = [];
+            const lastMonth = months[months.length - 1];
+            const prevMonth = months.length >= 2 ? months[months.length - 2] : null;
+            if (!prevMonth) return;
+
+            const salons = [...new Set(filteredData.map(d => d.name))];
+            salons.forEach(name => {
+                const curr = filteredData.find(d => d.name === name && d.date === lastMonth);
+                const prev = filteredData.find(d => d.name === name && d.date === prevMonth);
+                if (!curr) return;
+                const shortName = name.replace('美人バスト','').replace('美人ネイル＋','').replace('シミケアZERO美人 ','シミケア');
+
+                // Alert: PV大幅下落 (30%以上の減少)
+                if (prev && prev.pv > 0) {
+                    const pvChange = ((curr.pv - prev.pv) / prev.pv) * 100;
+                    if (pvChange <= -30) {
+                        alerts.push({ level: 'danger', store: shortName, type: curr.type,
+                            msg: `PVが前月比 ${pvChange.toFixed(0)}%（${formatNumber(prev.pv)} → ${formatNumber(curr.pv)}）` });
+                    } else if (pvChange <= -15) {
+                        alerts.push({ level: 'warning', store: shortName, type: curr.type,
+                            msg: `PVが前月比 ${pvChange.toFixed(0)}%（${formatNumber(prev.pv)} → ${formatNumber(curr.pv)}）` });
+                    }
+                }
+
+                // Alert: 新規獲得ゼロ
+                if (curr.new === 0) {
+                    alerts.push({ level: 'danger', store: shortName, type: curr.type,
+                        msg: `新規獲得が0件` });
+                }
+                // Alert: 新規大幅減 (50%以上減少、前月2件以上)
+                else if (prev && prev.new >= 2) {
+                    const newChange = ((curr.new - prev.new) / prev.new) * 100;
+                    if (newChange <= -50) {
+                        alerts.push({ level: 'danger', store: shortName, type: curr.type,
+                            msg: `新規が前月比 ${newChange.toFixed(0)}%（${prev.new}件 → ${curr.new}件）` });
+                    }
+                }
+
+                // Alert: CVR極端に低い (0.3%以下、PV500以上)
+                if (curr.pv >= 500) {
+                    const cvr = (curr.new / curr.pv) * 100;
+                    if (cvr < 0.3) {
+                        alerts.push({ level: 'warning', store: shortName, type: curr.type,
+                            msg: `CVRが ${cvr.toFixed(2)}% と低水準` });
+                    }
+                }
+            });
+
+            const container = document.getElementById('store-alerts');
+            const list = document.getElementById('alert-list');
+            if (alerts.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'block';
+            document.getElementById('alert-count').textContent = alerts.length + '件';
+
+            // Sort: danger first
+            alerts.sort((a, b) => (a.level === 'danger' ? 0 : 1) - (b.level === 'danger' ? 0 : 1));
+
+            list.innerHTML = alerts.map(a => {
+                const icon = a.level === 'danger' ? '🔴' : '🟡';
+                const typeLabel = a.type === '直営' ? '<span style="color:#5f9ea0;font-weight:700;">直営</span>' : '<span style="color:#f59e0b;font-weight:700;">FC</span>';
+                return `<div class="alert-card alert-${a.level}">
+                    <div class="alert-icon">${icon}</div>
+                    <div><span class="font-bold">${a.store}</span> ${typeLabel}<br>${a.msg}</div>
+                </div>`;
+            }).join('');
         }
 
         // CVR Trend Chart
